@@ -7,6 +7,8 @@ import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
 
@@ -100,6 +102,20 @@ public class GameActivity extends AppCompatActivity {
         gridViewEnemy.setAdapter(enemyGameAdapter);
         gridViewAttack.setAdapter(attackGameAdapter);
         gridViewNext.setAdapter(nextGameAdapter);
+
+        gridViewMain.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+
+            }
+        });
+
+        gridViewAttack.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+
+            }
+        });
 
         handler = new Handler(){
             @Override

@@ -5,6 +5,7 @@
     <ImageView
         android:layout_width="52.5dp"
         android:layout_height="52.5dp"
-        android:background="@drawable/btn_game_bg"/>
+        android:background="@drawable/btn_game_bg"
+        android:id="@+id/image_attack"/>
 
 </android.support.constraint.ConstraintLayout>

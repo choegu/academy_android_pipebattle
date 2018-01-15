@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 
 import com.choegu.indiegame.pipebattle.vo.TileVO;
 
@@ -30,7 +31,7 @@ public class MainGameAdapter extends ArrayAdapter<TileVO>{
     }
 
     class MainGameHolder {
-
+        ImageView imageTile;
     }
 
     @NonNull
@@ -44,12 +45,19 @@ public class MainGameAdapter extends ArrayAdapter<TileVO>{
 
             holder = new MainGameHolder();
 
+            holder.imageTile = convertView.findViewById(R.id.image_main);
+
             convertView.setTag(holder);
         } else {
             holder = (MainGameHolder) convertView.getTag();
         }
 
         TileVO tile = tileVOList.get(position);
+
+        if (position==0 || position==48) {
+            holder.imageTile.setImageResource(R.drawable.pipe_valve);
+        }
+//        holder.imageTile.setImageResource();
 
         return convertView;
     }

@@ -5,6 +5,7 @@
     <ImageView
         android:layout_width="15dp"
         android:layout_height="15dp"
-        android:background="#3300ff00"/>
+        android:background="#3300ff00"
+        android:id="@+id/image_enemy"/>
 
 </android.support.constraint.ConstraintLayout>
