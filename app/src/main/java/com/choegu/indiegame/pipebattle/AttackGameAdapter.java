@@ -25,6 +25,7 @@ public class AttackGameAdapter extends ArrayAdapter <TileVO>{
     public AttackGameAdapter(@NonNull Context context, int resource, @NonNull List<TileVO> objects) {
         super(context, resource, objects);
 
+        
         this.context = (Activity) context;
         this.layout = resource;
         this.tileVOList = objects;
