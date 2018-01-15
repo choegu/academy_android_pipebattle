@@ -12,7 +12,6 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
 
-import com.choegu.indiegame.pipebattle.vo.NextGameAdapter;
 import com.choegu.indiegame.pipebattle.vo.TileVO;
 
 import java.io.IOException;
@@ -22,6 +21,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Created by student on 2018-01-12.
@@ -53,6 +53,10 @@ public class GameActivity extends AppCompatActivity {
     private GameStartThread gameStartThread;
     private Handler handler;
 
+    // 파이프게임 로직
+    private Random random;
+    private TileVO tileSample;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,28 +72,34 @@ public class GameActivity extends AppCompatActivity {
         gridViewAttack = findViewById(R.id.gridView_attack_item);
         gridViewNext = findViewById(R.id.gridView_next_tile);
 
+        random = new Random();
+
+        // GridView 들 생성
         tileVOListMain = new ArrayList<>();
-        TileVO tileSample;
         for (int i=0; i<49; i++) {
             tileSample = new TileVO();
+            tileSample.setType(-1);
             tileVOListMain.add(tileSample);
         }
 
         tileVOListEnemy = new ArrayList<>();
         for (int i=0; i<49; i++) {
             tileSample = new TileVO();
+            tileSample.setType(-1);
             tileVOListEnemy.add(tileSample);
         }
 
         tileVOListAttack = new ArrayList<>();
         for (int i=0; i<4; i++) {
             tileSample = new TileVO();
+            tileSample.setType(-1);
             tileVOListAttack.add(tileSample);
         }
 
         tileVOListNext = new ArrayList<>();
         for (int i=0; i<6; i++) {
             tileSample = new TileVO();
+            tileSample.setType(random.nextInt(6)); // 0~5까지의 난수
             tileVOListNext.add(tileSample);
         }
 
@@ -106,7 +116,17 @@ public class GameActivity extends AppCompatActivity {
         gridViewMain.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-
+                if (i!=0 && i!=48) {
+                    tileVOListMain.get(i).setType(tileVOListNext.get(0).getType());
+                    tileVOListNext.remove(0);
+                    tileSample = new TileVO();
+                    tileSample.setType(random.nextInt(6));
+                    tileVOListNext.add(tileSample);
+                    refreshGameAdapter();
+                } else {
+                    tileVOListMain.get(i).setType(9);
+                    mainGameAdapter.notifyDataSetChanged();
+                }
             }
         });
 
@@ -197,5 +217,13 @@ public class GameActivity extends AppCompatActivity {
         }
 
         return gameNetwork;
+    }
+
+    // 모든 adapter 새로고침
+    private void refreshGameAdapter(){
+        attackGameAdapter.notifyDataSetChanged();
+        enemyGameAdapter.notifyDataSetChanged();
+        mainGameAdapter.notifyDataSetChanged();
+        nextGameAdapter.notifyDataSetChanged();
     }
 }
