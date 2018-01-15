@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="대기실"
+        android:textSize="20sp"
+        android:id="@+id/text_ready_title"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="플레이어"
+        android:id="@+id/text_player"
+        app:layout_constraintTop_toBottomOf="@id/text_ready_title"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="player1"
+        android:id="@+id/btn_player1"
+        app:layout_constraintTop_toBottomOf="@id/text_player"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="VS"
+        android:id="@+id/text_vs"
+        app:layout_constraintTop_toBottomOf="@id/text_player"
+        app:layout_constraintLeft_toRightOf="@id/btn_player1"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="player2"
+        android:id="@+id/btn_player2"
+        app:layout_constraintTop_toBottomOf="@id/text_player"
+        app:layout_constraintLeft_toRightOf="@id/text_vs"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="관전"
+        android:id="@+id/text_observer"
+        app:layout_constraintTop_toBottomOf="@id/btn_player1"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="observer1"
+        android:id="@+id/btn_observer1"
+        app:layout_constraintTop_toBottomOf="@id/text_observer"/>
+ 
+    <TextView
+        android:layout_width="0sp"
+        android:layout_height="0sp"
+        android:text=""
+        android:id="@+id/text_ready_chat"
+        app:layout_constraintBottom_toTopOf="@id/btn_ready_send"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_observer1"
+        android:layout_margin="10sp"
+        android:background="#33ff9933"
+        android:padding="10sp"/>
+
+    <EditText
+        android:layout_width="0sp"
+        android:layout_height="wrap_content"
+        android:background="#330000ff"
+        android:id="@+id/edit_ready_msg"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/btn_ready_send"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:minLines="1"
+        android:maxLines="1"
+        app:layout_constraintBaseline_toBaselineOf="@id/btn_ready_send"
+        android:layout_marginLeft="10sp"
+        />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SEND"
+        android:id="@+id/btn_ready_send"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="X"
+        android:id="@+id/btn_ready_x"
+        app:layout_constraintRight_toRightOf="parent"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ready"
+        android:id="@+id/btn_ready_start"
+        app:layout_constraintRight_toLeftOf="@id/btn_ready_x"/>
+
+</android.support.constraint.ConstraintLayout>

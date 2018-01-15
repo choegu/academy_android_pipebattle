@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.choegu.indiegame.pipebattle.MainActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="PIPE BATTLE"
+        android:textSize="30sp"
+        app:layout_constraintTop_toTopOf="parent"
+        android:id="@+id/text_main_title"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="로그인"
+        android:id="@+id/btn_login"
+        app:layout_constraintTop_toBottomOf="@id/text_main_title"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="회원가입"
+        android:id="@+id/btn_join"
+        app:layout_constraintTop_toBottomOf="@id/btn_login"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="게임 입장"
+        android:id="@+id/btn_enter"
+        app:layout_constraintTop_toBottomOf="@id/btn_join"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="설정"
+        android:id="@+id/btn_setting"
+        app:layout_constraintTop_toBottomOf="@id/btn_enter"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="랭킹"
+        android:id="@+id/btn_ranking"
+        app:layout_constraintTop_toBottomOf="@id/btn_setting"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="종료"
+        android:id="@+id/btn_exit"
+        app:layout_constraintTop_toBottomOf="@id/btn_ranking"/>
+
+</android.support.constraint.ConstraintLayout>
