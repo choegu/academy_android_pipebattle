@@ -60,6 +60,7 @@ public class AttackGameAdapter extends ArrayAdapter <TileVO>{
 
         switch(tile.getType()) {
             case -1:
+                holder.imageTile.setImageResource(0);
                 break;
             case MISSILE:
                 holder.imageTile.setImageResource(R.drawable.missile);

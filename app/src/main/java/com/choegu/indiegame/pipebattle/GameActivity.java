@@ -1,13 +1,11 @@
 package com.choegu.indiegame.pipebattle;
 
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -15,6 +13,7 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
 
+import com.choegu.indiegame.pipebattle.vo.FinishCheckVO;
 import com.choegu.indiegame.pipebattle.vo.GameCodeVO;
 import com.choegu.indiegame.pipebattle.vo.TileVO;
 
@@ -65,9 +64,17 @@ public class GameActivity extends AppCompatActivity {
     private Random random;
     private TileVO tileSample;
     private int clickNewCountMain = 0;
+    private final int TOTAL_COLUMN = 7;
     private final int EXPLOSION = 8;
     private final int MISSILE = 11;
     private final int BLANK_TILE = -1;
+    private final int FIRST_VALVE = 6;
+    private final int END_VALVE = 7;
+    private List<Integer> missileImpossibleList;
+    private List<Integer> moveToEastImpossibleList;
+    private List<Integer> moveToWestImpossibleList;
+    private List<Integer> moveToSouthImpossibleList;
+    private List<Integer> moveToNorthImpossibleList;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -90,15 +97,27 @@ public class GameActivity extends AppCompatActivity {
         tileVOListMain = new ArrayList<>();
         for (int i=0; i<49; i++) {
             tileSample = new TileVO();
-            tileSample.setType(BLANK_TILE);
+            if (i == 0) {
+                tileSample.setType(FIRST_VALVE);
+            } else if (i==48) {
+                tileSample.setType(END_VALVE);
+            } else {
+                tileSample.setType(BLANK_TILE);
+            }
             tileVOListMain.add(tileSample);
         }
 
         tileVOListEnemy = new ArrayList<>();
         for (int i=0; i<49; i++) {
             tileSample = new TileVO();
-            tileSample.setType(BLANK_TILE);
-            tileVOListEnemy.add(tileSample);
+            if (i == 0) {
+                tileSample.setType(FIRST_VALVE);
+            } else if (i==48) {
+                tileSample.setType(END_VALVE);
+            } else {
+                tileSample.setType(BLANK_TILE);
+            }
+            tileVOListMain.add(tileSample);
         }
 
         tileVOListAttack = new ArrayList<>();
@@ -157,6 +176,12 @@ public class GameActivity extends AppCompatActivity {
                         tileVOListAttack.add(0, tileSample);
                         attackGameAdapter.notifyDataSetChanged();
                     }
+                } else if(i==0 || i==48) {
+                    if (gameFinishCheck()) { // 성공
+
+                    } else { // 실패
+
+                    }
                 }
             }
         });
@@ -194,6 +219,36 @@ public class GameActivity extends AppCompatActivity {
             }
         };
 
+        // 미사일 발사 불가 타일 로딩
+        missileImpossibleList = new ArrayList<>();
+        missileImpossibleList.add(0);
+        missileImpossibleList.add(1);
+        missileImpossibleList.add(7);
+        missileImpossibleList.add(8);
+        missileImpossibleList.add(40);
+        missileImpossibleList.add(41);
+        missileImpossibleList.add(47);
+        missileImpossibleList.add(48);
+
+        // 게임 피니쉬 체크 리스트 로딩
+        moveToEastImpossibleList = new ArrayList<>();
+        for (int i=1; i<=6; i++) {
+            moveToEastImpossibleList.add(TOTAL_COLUMN*i-1);
+        }
+        moveToWestImpossibleList = new ArrayList<>();
+        for (int i=1; i<=6; i++) {
+            moveToWestImpossibleList.add(TOTAL_COLUMN*i);
+        }
+        moveToSouthImpossibleList = new ArrayList<>();
+        for (int i=1; i<=6; i++) {
+            moveToSouthImpossibleList.add(i+41);
+        }
+        moveToNorthImpossibleList = new ArrayList<>();
+        for (int i=1; i<=6; i++) {
+            moveToNorthImpossibleList.add(i);
+        }
+
+        // 서버 연결 및 준비완료 쓰레드 시작
         gameStartThread = new GameStartThread();
         gameStartThread.start();
     }
@@ -317,6 +372,16 @@ public class GameActivity extends AppCompatActivity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
+            missileImpossibleList.add(tileNum-8);
+            missileImpossibleList.add(tileNum-7);
+            missileImpossibleList.add(tileNum-6);
+            missileImpossibleList.add(tileNum-1);
+            missileImpossibleList.add(tileNum);
+            missileImpossibleList.add(tileNum+1);
+            missileImpossibleList.add(tileNum+6);
+            missileImpossibleList.add(tileNum+7);
+            missileImpossibleList.add(tileNum+8);
         }
     }
 
@@ -350,20 +415,208 @@ public class GameActivity extends AppCompatActivity {
         gridViewAttackDialog.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                ClickAttackEnemyThread clickAttackEnemyThread = new ClickAttackEnemyThread(i);
-                clickAttackEnemyThread.start();
-                tileVOListEnemy.get(i).setType(EXPLOSION);
-                enemyGameAdapter.notifyDataSetChanged();
-                tileVOListAttack.remove(attackNum);
-                tileSample = new TileVO();
-                tileSample.setType(BLANK_TILE);
-                tileVOListAttack.add(tileSample);
-                attackGameAdapter.notifyDataSetChanged();
-                attackDialog.cancel();
+                if (!missileImpossibleList.contains(i)) {
+                    ClickAttackEnemyThread clickAttackEnemyThread = new ClickAttackEnemyThread(i);
+                    clickAttackEnemyThread.start();
+                    tileVOListEnemy.get(i).setType(EXPLOSION);
+                    enemyGameAdapter.notifyDataSetChanged();
+                    tileVOListAttack.remove(attackNum);
+                    tileSample = new TileVO();
+                    tileSample.setType(BLANK_TILE);
+                    tileVOListAttack.add(tileSample);
+                    attackGameAdapter.notifyDataSetChanged();
+                    attackDialog.cancel();
+                }
             }
         });
 
         return attackDialog;
     }
 
+    // 피니쉬 체크 메소드
+    private boolean gameFinishCheck() {
+        boolean gameFinishResult = false;
+
+        FinishCheckVO checkVO = new FinishCheckVO();
+        checkVO.setTileNum(1);
+        checkVO.setDirectionEast();
+
+        while(true) {
+            switch (tileVOListMain.get(checkVO.getTileNum()).getType()) {
+                case 0:
+                    finishCheck0(checkVO);
+                    break;
+                case 1:
+                    finishCheck1(checkVO);
+                    break;
+                case 2:
+                    finishCheck2(checkVO);
+                    break;
+                case 3:
+                    finishCheck3(checkVO);
+                    break;
+                case 4:
+                    finishCheck4(checkVO);
+                    break;
+                case 5:
+                    finishCheck5(checkVO);
+                    break;
+                case FIRST_VALVE:
+                    finishCheck6(checkVO);
+                    break;
+                case END_VALVE:
+                    finishCheck7(checkVO);
+                    break;
+            }
+
+            if (checkVO.getDirection()==FinishCheckVO.ERROR) {
+                gameFinishResult = false;
+                break;
+            } else if (checkVO.getDirection()==FinishCheckVO.COMPLETE) {
+                gameFinishResult = true;
+                break;
+            }
+        }
+
+        return gameFinishResult;
+    }
+
+    // 타일별 game finish check logic
+    private FinishCheckVO finishCheck0(FinishCheckVO finishCheck) {
+        if (finishCheck.getDirection()==FinishCheckVO.NORTH) {
+            if (moveToEastImpossibleList.contains(finishCheck.getTileNum())) {
+                finishCheck.setDirectionError();
+            } else {
+                finishCheck.setTileNumPlus1();
+                finishCheck.setDirectionEast();
+            }
+        } else if (finishCheck.getDirection()==FinishCheckVO.WEST) {
+            if (moveToSouthImpossibleList.contains(finishCheck.getTileNum())) {
+                finishCheck.setDirectionError();
+            } else {
+                finishCheck.setTileNumPlus7();
+                finishCheck.setDirectionSouth();
+            }
+        } else {
+            finishCheck.setDirectionError();
+        }
+        return finishCheck;
+    }
+    private FinishCheckVO finishCheck1(FinishCheckVO finishCheck) {
+        if (finishCheck.getDirection()==FinishCheckVO.EAST) {
+            if (moveToEastImpossibleList.contains(finishCheck.getTileNum())) {
+                finishCheck.setDirectionError();
+            } else {
+                finishCheck.setTileNumPlus1();
+                finishCheck.setDirectionEast();
+            }
+        } else if (finishCheck.getDirection()==FinishCheckVO.WEST) {
+            if (moveToWestImpossibleList.contains(finishCheck.getTileNum())) {
+                finishCheck.setDirectionError();
+            } else {
+                finishCheck.setTileNumMinus1();
+                finishCheck.setDirectionWest();
+            }
+        } else {
+            finishCheck.setDirectionError();
+        }
+        return finishCheck;
+    }
+    private FinishCheckVO finishCheck2(FinishCheckVO finishCheck) {
+        if (finishCheck.getDirection()==FinishCheckVO.EAST) {
+            if (moveToSouthImpossibleList.contains(finishCheck.getTileNum())) {
+                finishCheck.setDirectionError();
+            } else {
+                finishCheck.setTileNumPlus7();
+                finishCheck.setDirectionSouth();
+            }
+        } else if (finishCheck.getDirection()==FinishCheckVO.NORTH) {
+            if (moveToWestImpossibleList.contains(finishCheck.getTileNum())) {
+                finishCheck.setDirectionError();
+            } else {
+                finishCheck.setTileNumMinus1();
+                finishCheck.setDirectionWest();
+            }
+        } else {
+            finishCheck.setDirectionError();
+        }
+        return finishCheck;
+    }
+    private FinishCheckVO finishCheck3(FinishCheckVO finishCheck) {
+        if (finishCheck.getDirection()==FinishCheckVO.EAST) {
+            if (moveToNorthImpossibleList.contains(finishCheck.getTileNum())) {
+                finishCheck.setDirectionError();
+            } else {
+                finishCheck.setTileNumMinus7();
+                finishCheck.setDirectionNorth();
+            }
+        } else if (finishCheck.getDirection()==FinishCheckVO.SOUTH) {
+            if (moveToWestImpossibleList.contains(finishCheck.getTileNum())) {
+                finishCheck.setDirectionError();
+            } else {
+                finishCheck.setTileNumMinus1();
+                finishCheck.setDirectionWest();
+            }
+        } else {
+            finishCheck.setDirectionError();
+        }
+        return finishCheck;
+    }
+    private FinishCheckVO finishCheck4(FinishCheckVO finishCheck) {
+        if (finishCheck.getDirection()==FinishCheckVO.SOUTH) {
+            if (moveToEastImpossibleList.contains(finishCheck.getTileNum())) {
+                finishCheck.setDirectionError();
+            } else {
+                finishCheck.setTileNumPlus1();
+                finishCheck.setDirectionEast();
+            }
+        } else if (finishCheck.getDirection()==FinishCheckVO.WEST) {
+            if (moveToNorthImpossibleList.contains(finishCheck.getTileNum())) {
+                finishCheck.setDirectionError();
+            } else {
+                finishCheck.setTileNumMinus7();
+                finishCheck.setDirectionNorth();
+            }
+        } else {
+            finishCheck.setDirectionError();
+        }
+        return finishCheck;
+    }
+    private FinishCheckVO finishCheck5(FinishCheckVO finishCheck) {
+        if (finishCheck.getDirection()==FinishCheckVO.NORTH) {
+            if (moveToNorthImpossibleList.contains(finishCheck.getTileNum())) {
+                finishCheck.setDirectionError();
+            } else {
+                finishCheck.setTileNumMinus7();
+                finishCheck.setDirectionNorth();
+            }
+        } else if (finishCheck.getDirection()==FinishCheckVO.SOUTH) {
+            if (moveToSouthImpossibleList.contains(finishCheck.getTileNum())) {
+                finishCheck.setDirectionError();
+            } else {
+                finishCheck.setTileNumPlus7();
+                finishCheck.setDirectionSouth();
+            }
+        } else {
+            finishCheck.setDirectionError();
+        }
+        return finishCheck;
+    }
+    private FinishCheckVO finishCheck6(FinishCheckVO finishCheck) {
+        if (moveToEastImpossibleList.contains(finishCheck.getTileNum())) {
+            finishCheck.setDirectionError();
+        } else {
+            finishCheck.setTileNumPlus1();
+            finishCheck.setDirectionEast();
+        }
+        return finishCheck;
+    }
+    private FinishCheckVO finishCheck7(FinishCheckVO finishCheck) {
+        if (finishCheck.getDirection()==FinishCheckVO.EAST) {
+            finishCheck.setDirectionComplete();
+        } else {
+            finishCheck.setDirectionError();
+        }
+        return finishCheck;
+    }
 }

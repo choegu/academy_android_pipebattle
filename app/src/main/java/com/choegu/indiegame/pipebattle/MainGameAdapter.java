@@ -25,6 +25,8 @@ public class MainGameAdapter extends ArrayAdapter<TileVO>{
 
     // 게임 로직
     private final int EXPLOSION = 8;
+    private final int FIRST_VALVE = 6;
+    private final int END_VALVE = 7;
 
     public MainGameAdapter(@NonNull Context context, int resource, @NonNull List<TileVO> objects) {
         super(context, resource, objects);
@@ -57,37 +59,36 @@ public class MainGameAdapter extends ArrayAdapter<TileVO>{
 
         TileVO tile = tileVOList.get(position);
 
-        if (position==0 || position==48) {
-            holder.imageTile.setImageResource(R.drawable.pipe_valve);
-
-            // gif 재생 테스트 : 한번만 동작하도록 하는 기능 찾아야함
-//            Glide.with(context).load(R.drawable.progress_pipe_valve).into(holder.imageTile);
-        } else {
-            switch(tile.getType()) {
-                case -1:
-                    break;
-                case 0:
-                    holder.imageTile.setImageResource(R.drawable.pipe0);
-                    break;
-                case 1:
-                    holder.imageTile.setImageResource(R.drawable.pipe1);
-                    break;
-                case 2:
-                    holder.imageTile.setImageResource(R.drawable.pipe2);
-                    break;
-                case 3:
-                    holder.imageTile.setImageResource(R.drawable.pipe3);
-                    break;
-                case 4:
-                    holder.imageTile.setImageResource(R.drawable.pipe4);
-                    break;
-                case 5:
-                    holder.imageTile.setImageResource(R.drawable.pipe5);
-                    break;
-                case EXPLOSION:
-                    holder.imageTile.setImageResource(R.drawable.explosion);
-                    break;
-            }
+        switch(tile.getType()) {
+            case -1:
+                break;
+            case 0:
+                holder.imageTile.setImageResource(R.drawable.pipe0);
+                break;
+            case 1:
+                holder.imageTile.setImageResource(R.drawable.pipe1);
+                break;
+            case 2:
+                holder.imageTile.setImageResource(R.drawable.pipe2);
+                break;
+            case 3:
+                holder.imageTile.setImageResource(R.drawable.pipe3);
+                break;
+            case 4:
+                holder.imageTile.setImageResource(R.drawable.pipe4);
+                break;
+            case 5:
+                holder.imageTile.setImageResource(R.drawable.pipe5);
+                break;
+            case FIRST_VALVE:
+                holder.imageTile.setImageResource(R.drawable.pipe_valve);
+                break;
+            case END_VALVE:
+                holder.imageTile.setImageResource(R.drawable.pipe_valve);
+                break;
+            case EXPLOSION:
+                holder.imageTile.setImageResource(R.drawable.explosion);
+                break;
         }
 
         return convertView;
