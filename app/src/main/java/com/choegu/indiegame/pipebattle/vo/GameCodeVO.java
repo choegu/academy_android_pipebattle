@@ -10,17 +10,21 @@ public class GameCodeVO implements Serializable{
     /**
      *
      */
-    private static final long serialVersionUID = 6297861377560671876L;
+    private static final long serialVersionUID = 9144581995428760941L;
     private String code;
-    private String id;
+    private String player1;
+    private String player2;
+    private int tileType;
     private int tileNum;
 
     public GameCodeVO() {
     }
 
-    public GameCodeVO(String code, String id, int tileNum) {
+    public GameCodeVO(String code, String player1, String player2, int tileType, int tileNum) {
         this.code = code;
-        this.id = id;
+        this.player1 = player1;
+        this.player2 = player2;
+        this.tileType = tileType;
         this.tileNum = tileNum;
     }
 
@@ -32,12 +36,28 @@ public class GameCodeVO implements Serializable{
         this.code = code;
     }
 
-    public String getId() {
-        return id;
+    public String getPlayer1() {
+        return player1;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setPlayer1(String player1) {
+        this.player1 = player1;
+    }
+
+    public String getPlayer2() {
+        return player2;
+    }
+
+    public void setPlayer2(String player2) {
+        this.player2 = player2;
+    }
+
+    public int getTileType() {
+        return tileType;
+    }
+
+    public void setTileType(int tileType) {
+        this.tileType = tileType;
     }
 
     public int getTileNum() {
@@ -52,7 +72,9 @@ public class GameCodeVO implements Serializable{
     public String toString() {
         return "GameCodeVO{" +
                 "code='" + code + '\'' +
-                ", id='" + id + '\'' +
+                ", player1='" + player1 + '\'' +
+                ", player2='" + player2 + '\'' +
+                ", tileType=" + tileType +
                 ", tileNum=" + tileNum +
                 '}';
     }

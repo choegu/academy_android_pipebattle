@@ -53,12 +53,6 @@ public class NextGameAdapter extends ArrayAdapter<TileVO>{
             holder = (NextGameHolder) convertView.getTag();
         }
 
-        if (position==0) {
-            holder.imageTile.getLayoutParams().width = 60;
-            holder.imageTile.getLayoutParams().height = 60;
-            holder.imageTile.requestLayout();
-        }
-
         TileVO tile = tileVOList.get(position);
 
         switch(tile.getType()) {

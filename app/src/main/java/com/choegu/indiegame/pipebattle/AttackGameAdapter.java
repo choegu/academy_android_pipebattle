@@ -22,6 +22,9 @@ public class AttackGameAdapter extends ArrayAdapter <TileVO>{
     private Activity context;
     private int layout;
     private List<TileVO> tileVOList;
+
+    // 게임 로직
+    private final int MISSILE = 11;
     
     public AttackGameAdapter(@NonNull Context context, int resource, @NonNull List<TileVO> objects) {
         super(context, resource, objects);
@@ -58,17 +61,8 @@ public class AttackGameAdapter extends ArrayAdapter <TileVO>{
         switch(tile.getType()) {
             case -1:
                 break;
-            case 0:
-                break;
-            case 1:
-                break;
-            case 2:
-                break;
-            case 3:
-                break;
-            case 4:
-                break;
-            case 5:
+            case MISSILE:
+                holder.imageTile.setImageResource(R.drawable.missile);
                 break;
         }
 

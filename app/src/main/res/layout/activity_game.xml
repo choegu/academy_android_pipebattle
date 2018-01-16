@@ -37,8 +37,8 @@
         app:layout_constraintTop_toBottomOf="@id/gridView_enemy_game"/>
 
     <GridView
-        android:layout_width="310dp"
-        android:layout_height="60dp"
+        android:layout_width="300dp"
+        android:layout_height="50dp"
         android:id="@+id/gridView_next_tile"
         android:numColumns="6"
         android:padding="0dp"

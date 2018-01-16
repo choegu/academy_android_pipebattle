@@ -23,6 +23,9 @@ public class MainGameAdapter extends ArrayAdapter<TileVO>{
     private int layout;
     private List<TileVO> tileVOList;
 
+    // 게임 로직
+    private final int EXPLOSION = 8;
+
     public MainGameAdapter(@NonNull Context context, int resource, @NonNull List<TileVO> objects) {
         super(context, resource, objects);
         this.context = (Activity) context;
@@ -80,6 +83,9 @@ public class MainGameAdapter extends ArrayAdapter<TileVO>{
                     break;
                 case 5:
                     holder.imageTile.setImageResource(R.drawable.pipe5);
+                    break;
+                case EXPLOSION:
+                    holder.imageTile.setImageResource(R.drawable.explosion);
                     break;
             }
         }
