@@ -1,23 +1,29 @@
 package com.choegu.indiegame.pipebattle;
 
 import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.GridView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.choegu.indiegame.pipebattle.vo.FinishCheckVO;
 import com.choegu.indiegame.pipebattle.vo.GameCodeVO;
+import com.choegu.indiegame.pipebattle.vo.OptionValue;
 import com.choegu.indiegame.pipebattle.vo.TileVO;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
@@ -31,10 +37,14 @@ import java.util.Random;
  */
 
 public class GameActivity extends AppCompatActivity {
-    // 네크워크 코드 : 승패 등 추가해야함
+    // 네크워크 코드
     private final String LOADING_COMPLETE_GAME = "loadingCompleteGame";
     private final String CLICK_MAIN_GAME = "clickMainGame";
     private final String CLICK_ATTACK_GAME = "clickAttackGame";
+    private final String OUT_PLAYER1_GAME = "outPlayer1Game";
+    private final String OUT_PLAYER2_GAME = "outPlayer2Game";
+    private final String GAME_FINISH_RESULT = "gameFinishResult";
+    private final String GAME_ALREADY_END = "gameAlreadyEnd";
 
     // 방 입장 task
     private final String CREATE = "create";
@@ -42,6 +52,7 @@ public class GameActivity extends AppCompatActivity {
 
     // 네트워크 연결
     private int portNum;
+    private Socket socket;
     private ObjectInputStream sois;
     private ObjectOutputStream soos;
     private boolean gameNetwork = false;
@@ -58,6 +69,9 @@ public class GameActivity extends AppCompatActivity {
     // 쓰레드
     private GameStartThread gameStartThread;
     private ClickMainGameThread clickMainGameThread;
+    private GameCloseThread gameCloseThread;
+    private OutPlayerFromGameThread outPlayerFromGameThread;
+    private GameFinishNoticeThread gameFinishNoticeThread;
     private Handler handler;
 
     // 파이프게임 로직
@@ -117,7 +131,7 @@ public class GameActivity extends AppCompatActivity {
             } else {
                 tileSample.setType(BLANK_TILE);
             }
-            tileVOListMain.add(tileSample);
+            tileVOListEnemy.add(tileSample);
         }
 
         tileVOListAttack = new ArrayList<>();
@@ -178,9 +192,10 @@ public class GameActivity extends AppCompatActivity {
                     }
                 } else if(i==0 || i==48) {
                     if (gameFinishCheck()) { // 성공
-
+                        gameFinishNoticeThread = new GameFinishNoticeThread();
+                        gameFinishNoticeThread.start();
                     } else { // 실패
-
+                        showFailedGameDialog();
                     }
                 }
             }
@@ -214,6 +229,52 @@ public class GameActivity extends AppCompatActivity {
                         receiveMsg = (GameCodeVO) msg.obj;
                         tileVOListMain.get(receiveMsg.getTileNum()).setType(EXPLOSION);
                         mainGameAdapter.notifyDataSetChanged();
+                        break;
+                    case 166: // P1 나감
+                        if (task.equals(CREATE)) {
+                            gameStartThread.interrupt();
+                            gameCloseThread.start();
+
+                            Intent intent = new Intent(GameActivity.this, ListActivity.class);
+                            intent.putExtra("loginId", loginId);
+                            startActivity(intent);
+                            finish();
+                        } else if (task.equals(ENTER)) {
+                            makeFinishDialog(true).show();
+                        }
+                        break;
+                    case 167: // P2 나감
+                        if (task.equals(CREATE)) {
+                            makeFinishDialog(true).show();
+                        } else if (task.equals(ENTER)) {
+                            gameStartThread.interrupt();
+                            gameCloseThread.start();
+
+                            Intent intent = new Intent(GameActivity.this, ListActivity.class);
+                            intent.putExtra("loginId", loginId);
+                            startActivity(intent);
+                            finish();
+                        }
+                        break;
+                    case 169: // 게임 성공
+                        receiveMsg = (GameCodeVO) msg.obj;
+                        if (task.equals(CREATE)) {
+                            if (receiveMsg.getPlayer1()!=null && !receiveMsg.getPlayer1().isEmpty()) {
+                                makeFinishDialog(true).show();
+                            } else if (receiveMsg.getPlayer2()!=null && !receiveMsg.getPlayer2().isEmpty()) {
+                                makeFinishDialog(false).show();
+                            }
+                        } else if (task.equals(ENTER)) {
+                            Log.d("yyj","test:"+receiveMsg);
+                            if (receiveMsg.getPlayer1()!=null && !receiveMsg.getPlayer1().isEmpty()) {
+                                makeFinishDialog(false).show();
+                            } else if (receiveMsg.getPlayer2()!=null && !receiveMsg.getPlayer2().isEmpty()) {
+                                makeFinishDialog(true).show();
+                            }
+                        }
+                        break;
+                    case 170: // 미리 누가 게임 성공
+                        Toast.makeText(GameActivity.this, "상대가 먼저 성공하였습니다.",Toast.LENGTH_SHORT).show();
                         break;
                 }
             }
@@ -251,6 +312,13 @@ public class GameActivity extends AppCompatActivity {
         // 서버 연결 및 준비완료 쓰레드 시작
         gameStartThread = new GameStartThread();
         gameStartThread.start();
+
+        gameCloseThread = new GameCloseThread();
+    }
+
+    @Override
+    public void onBackPressed() {
+        showExitGameDialog();
     }
 
     // 방 생성 직후 네트워크 연결 및 코드 받는 쓰레드
@@ -304,9 +372,28 @@ public class GameActivity extends AppCompatActivity {
                             msg.obj = code;
                             handler.sendMessage(msg);
                         }
+                    } else if (code.getCode().equals(OUT_PLAYER1_GAME)) { // P1 나감
+                        Message msg = new Message();
+                        msg.what = 166;
+                        handler.sendMessage(msg);
+                    } else if (code.getCode().equals(OUT_PLAYER2_GAME)) { // P2 나감
+                        Message msg = new Message();
+                        msg.what = 167;
+                        handler.sendMessage(msg);
+                    } else if (code.getCode().equals(GAME_FINISH_RESULT)) { // 게임 성공
+                        Message msg = new Message();
+                        msg.what = 169;
+                        msg.obj = code;
+                        handler.sendMessage(msg);
+                    } else if (code.getCode().equals(GAME_ALREADY_END)) { // 누군가 미리 게임 성공
+                        Message msg = new Message();
+                        msg.what = 170;
+                        handler.sendMessage(msg);
                     }
 
                 }
+            } catch (InterruptedIOException e) {
+                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (ClassNotFoundException e) {
@@ -385,11 +472,68 @@ public class GameActivity extends AppCompatActivity {
         }
     }
 
+    // 플레이어 퇴장 쓰레드
+    class OutPlayerFromGameThread extends Thread {
+        @Override
+        public void run() {
+            GameCodeVO codeVO = new GameCodeVO();
+
+            if (task.equals(CREATE)) {
+                codeVO.setPlayer1(loginId);
+                codeVO.setCode(OUT_PLAYER1_GAME);
+            } else if (task.equals(ENTER)) {
+                codeVO.setPlayer2(loginId);
+                codeVO.setCode(OUT_PLAYER2_GAME);
+            }
+
+            try {
+                soos.writeObject(codeVO);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // 게임 성공 쓰레드 (상대에게 성공결과 전송)
+    class GameFinishNoticeThread extends Thread {
+        @Override
+        public void run() {
+            GameCodeVO codeVO = new GameCodeVO();
+            codeVO.setCode(GAME_FINISH_RESULT);
+
+            if (task.equals(CREATE)) {
+                codeVO.setPlayer1(loginId);
+            } else if (task.equals(ENTER)) {
+                codeVO.setPlayer2(loginId);
+            }
+
+            try {
+                soos.writeObject(codeVO);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // 소켓 종료 쓰레드
+    class GameCloseThread extends Thread {
+        @Override
+        public void run() {
+            try {
+                sois.close();
+                soos.close();
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     // Game Room 서버연결
     private boolean initNetwork() {
 
         try {
-            Socket socket = new Socket(InetAddress.getByName("70.12.115.57"), portNum);
+            socket = new Socket(InetAddress.getByName(OptionValue.serverIp), portNum);
             soos = new ObjectOutputStream(socket.getOutputStream());
             sois = new ObjectInputStream(socket.getInputStream());
             gameNetwork = true;
@@ -426,6 +570,8 @@ public class GameActivity extends AppCompatActivity {
                     tileVOListAttack.add(tileSample);
                     attackGameAdapter.notifyDataSetChanged();
                     attackDialog.cancel();
+                } else {
+                    Toast.makeText(GameActivity.this, "설치할 수 없는 위치입니다", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -433,16 +579,87 @@ public class GameActivity extends AppCompatActivity {
         return attackDialog;
     }
 
+    // finish game 다이얼로그, 누군가 포기해서 종료되는 것 포함
+    private Dialog makeFinishDialog(boolean winLose) {
+        final Dialog finishDialog = new Dialog(this);
+        finishDialog.setContentView(R.layout.dialog_finish);
+
+        TextView textFinishResult = finishDialog.findViewById(R.id.finish_text_result);
+        Button btnFinishOk = finishDialog.findViewById(R.id.finish_btn_ok);
+
+        if (winLose) {
+            textFinishResult.setText("승리하였습니다");
+        } else {
+            textFinishResult.setText("패배하였습니다");
+        }
+        btnFinishOk.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finishDialog.cancel();
+
+                gameStartThread.interrupt();
+                gameCloseThread.start();
+
+                Intent intent = new Intent(GameActivity.this, ListActivity.class);
+                intent.putExtra("loginId", loginId);
+                startActivity(intent);
+                finish();
+            }
+        });
+
+        return finishDialog;
+    }
+
+    // 게임 실패 다이얼로그
+    private void showFailedGameDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("실패했습니다. 다시 시도하세요.")
+                .setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.cancel();
+                    }
+                })
+                .show();
+    }
+
+    // 게임 나가기 다이얼로그
+    private void showExitGameDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("게임을 나가시겠습니까?")
+                .setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.cancel();
+                    }
+                })
+                .setPositiveButton("나가기", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        // 서버에 쓰레드 보내서 소켓 없애고 상대 플레이어에게도 종료명령 보내야함
+                        outPlayerFromGameThread = new OutPlayerFromGameThread();
+                        outPlayerFromGameThread.start();
+                    }
+                })
+                .show();
+    }
+
     // 피니쉬 체크 메소드
     private boolean gameFinishCheck() {
         boolean gameFinishResult = false;
+        boolean gameFinishWhile = true;
 
         FinishCheckVO checkVO = new FinishCheckVO();
         checkVO.setTileNum(1);
         checkVO.setDirectionEast();
 
-        while(true) {
+        while(gameFinishWhile) {
             switch (tileVOListMain.get(checkVO.getTileNum()).getType()) {
+                case -1:
+                    finishCheckBlank(checkVO);
+                    break;
                 case 0:
                     finishCheck0(checkVO);
                     break;
@@ -467,14 +684,17 @@ public class GameActivity extends AppCompatActivity {
                 case END_VALVE:
                     finishCheck7(checkVO);
                     break;
+                case EXPLOSION:
+                    finishCheck8(checkVO);
+                    break;
             }
 
             if (checkVO.getDirection()==FinishCheckVO.ERROR) {
                 gameFinishResult = false;
-                break;
+                gameFinishWhile = false;
             } else if (checkVO.getDirection()==FinishCheckVO.COMPLETE) {
                 gameFinishResult = true;
-                break;
+                gameFinishWhile = false;
             }
         }
 
@@ -482,6 +702,10 @@ public class GameActivity extends AppCompatActivity {
     }
 
     // 타일별 game finish check logic
+    private FinishCheckVO finishCheckBlank(FinishCheckVO finishCheck) {
+        finishCheck.setDirectionError();
+        return finishCheck;
+    }
     private FinishCheckVO finishCheck0(FinishCheckVO finishCheck) {
         if (finishCheck.getDirection()==FinishCheckVO.NORTH) {
             if (moveToEastImpossibleList.contains(finishCheck.getTileNum())) {
@@ -617,6 +841,10 @@ public class GameActivity extends AppCompatActivity {
         } else {
             finishCheck.setDirectionError();
         }
+        return finishCheck;
+    }
+    private FinishCheckVO finishCheck8(FinishCheckVO finishCheck) {
+        finishCheck.setDirectionError();
         return finishCheck;
     }
 }

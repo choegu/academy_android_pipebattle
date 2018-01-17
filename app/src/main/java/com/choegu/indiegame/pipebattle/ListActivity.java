@@ -17,6 +17,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.choegu.indiegame.pipebattle.vo.ListCodeVO;
+import com.choegu.indiegame.pipebattle.vo.OptionValue;
 import com.choegu.indiegame.pipebattle.vo.RoomVO;
 
 import java.io.IOException;
@@ -47,7 +48,7 @@ public class ListActivity extends AppCompatActivity {
     private ListView listViewRoom;
     private List<RoomVO> roomVOList;
     private RoomAdapter adapter;
-    private String loginId = "test1";
+    private String loginId;
 
     // 쓰레드
     private RefreshRoomThread refresh;
@@ -64,6 +65,9 @@ public class ListActivity extends AppCompatActivity {
         btnRefresh = findViewById(R.id.btn_refresh);
         btnListX = findViewById(R.id.btn_list_x);
         listViewRoom = findViewById(R.id.listview_room);
+
+        Intent receiveIntent = getIntent();
+        loginId = receiveIntent.getStringExtra("loginId");
 
         roomVOList = new ArrayList<>();
         refresh = new RefreshRoomThread();
@@ -86,14 +90,18 @@ public class ListActivity extends AppCompatActivity {
         listViewRoom.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                Intent intent = new Intent(ListActivity.this, ReadyActivity.class);
-                intent.putExtra("portNum", roomVOList.get(i).getPortNum());
-                intent.putExtra("loginId", loginId);
-                intent.putExtra("task", "enter");
-                startActivity(intent);
-                finish();
-                closeNetworkThread = new CloseListThread();
-                closeNetworkThread.start();
+                if (roomVOList.get(i).getPlayerNum()<2) {
+                    Intent intent = new Intent(ListActivity.this, ReadyActivity.class);
+                    intent.putExtra("portNum", roomVOList.get(i).getPortNum());
+                    intent.putExtra("loginId", loginId);
+                    intent.putExtra("task", "enter");
+                    startActivity(intent);
+                    finish();
+                    closeNetworkThread = new CloseListThread();
+                    closeNetworkThread.start();
+                } else {
+                    showFullRoomMessageDialog();
+                }
             }
         });
 
@@ -114,6 +122,8 @@ public class ListActivity extends AppCompatActivity {
             }
         });
 
+        closeNetworkThread = new CloseListThread();
+
         handler = new Handler(){
             @Override
             public void handleMessage(Message msg) {
@@ -133,22 +143,29 @@ public class ListActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
 
+                        closeNetworkThread.start();
+
                         startActivity(intent);
                         finish();
 
-                        closeNetworkThread = new CloseListThread();
-                        closeNetworkThread.start();
                         break;
                     case 108: // 새로고침
                         adapter.notifyDataSetChanged();
                         Toast.makeText(getApplicationContext(), "현재 방 : "+roomVOList.size()+"개", Toast.LENGTH_SHORT).show();
                         break;
                     case 109: // 방 없음 toast
+                        adapter.notifyDataSetChanged();
                         Toast.makeText(getApplicationContext(), "생성된 방 없음", Toast.LENGTH_SHORT).show();
                         break;
                 }
             }
         };
+    }
+
+    @Override
+    public void onBackPressed() {
+        closeNetworkThread.start();
+        super.onBackPressed();
     }
 
     // 새로고침 쓰레드
@@ -255,7 +272,7 @@ public class ListActivity extends AppCompatActivity {
 
         Log.d("yyj","1");
         try {
-            socket = new Socket(InetAddress.getByName("70.12.115.57"), 10000);
+            socket = new Socket(InetAddress.getByName(OptionValue.serverIp), 10000);
             Log.d("yyj","2");
             soos = new ObjectOutputStream(socket.getOutputStream());
             Log.d("yyj","3");
@@ -302,6 +319,19 @@ public class ListActivity extends AppCompatActivity {
                     }
                 })
                 .show();
+    }
 
+    // 풀방 다이얼로그
+    private void showFullRoomMessageDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("방 인원이 가득 찼습니다")
+                .setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.cancel();
+                    }
+                })
+                .show();
     }
 }
