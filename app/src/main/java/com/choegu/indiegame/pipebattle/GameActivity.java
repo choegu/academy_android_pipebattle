@@ -65,6 +65,7 @@ public class GameActivity extends AppCompatActivity {
     private EnemyGameAdapter enemyGameAdapter, attackDialogAdapter;
     private AttackGameAdapter attackGameAdapter;
     private NextGameAdapter nextGameAdapter;
+    private Dialog currentDialog;
 
     // 쓰레드
     private GameStartThread gameStartThread;
@@ -195,7 +196,8 @@ public class GameActivity extends AppCompatActivity {
                         gameFinishNoticeThread = new GameFinishNoticeThread();
                         gameFinishNoticeThread.start();
                     } else { // 실패
-                        showFailedGameDialog();
+                        currentDialog = showFailedGameDialog();
+                        currentDialog.show();
                     }
                 }
             }
@@ -205,7 +207,8 @@ public class GameActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 if (tileVOListAttack.get(i).getType() == MISSILE) {
-                    makeAttackDialog(i).show();
+                    currentDialog = makeAttackDialog(i);
+                    currentDialog.show();
                 }
             }
         });
@@ -262,11 +265,19 @@ public class GameActivity extends AppCompatActivity {
                             if (receiveMsg.getPlayer1()!=null && !receiveMsg.getPlayer1().isEmpty()) {
                                 makeFinishDialog(true).show();
                             } else if (receiveMsg.getPlayer2()!=null && !receiveMsg.getPlayer2().isEmpty()) {
+                                if (currentDialog.isShowing()) {
+                                    Log.d("chs", "다이얼로그 열림");
+                                    currentDialog.cancel();
+                                }
                                 makeFinishDialog(false).show();
                             }
                         } else if (task.equals(ENTER)) {
                             Log.d("yyj","test:"+receiveMsg);
                             if (receiveMsg.getPlayer1()!=null && !receiveMsg.getPlayer1().isEmpty()) {
+                                if (currentDialog.isShowing()) {
+                                    Log.d("chs", "다이얼로그 열림");
+                                    currentDialog.cancel();
+                                }
                                 makeFinishDialog(false).show();
                             } else if (receiveMsg.getPlayer2()!=null && !receiveMsg.getPlayer2().isEmpty()) {
                                 makeFinishDialog(true).show();
@@ -318,7 +329,8 @@ public class GameActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        showExitGameDialog();
+        currentDialog = showExitGameDialog();
+        currentDialog.show();
     }
 
     // 방 생성 직후 네트워크 연결 및 코드 받는 쓰레드
@@ -583,6 +595,7 @@ public class GameActivity extends AppCompatActivity {
     private Dialog makeFinishDialog(boolean winLose) {
         final Dialog finishDialog = new Dialog(this);
         finishDialog.setContentView(R.layout.dialog_finish);
+        finishDialog.setCanceledOnTouchOutside(false);
 
         TextView textFinishResult = finishDialog.findViewById(R.id.finish_text_result);
         Button btnFinishOk = finishDialog.findViewById(R.id.finish_btn_ok);
@@ -611,24 +624,24 @@ public class GameActivity extends AppCompatActivity {
     }
 
     // 게임 실패 다이얼로그
-    private void showFailedGameDialog() {
+    private Dialog showFailedGameDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-        builder.setTitle("실패했습니다. 다시 시도하세요.")
+        return builder.setTitle("실패했습니다. 다시 시도하세요.")
                 .setPositiveButton("확인", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         dialogInterface.cancel();
                     }
                 })
-                .show();
+                .create();
     }
 
     // 게임 나가기 다이얼로그
-    private void showExitGameDialog() {
+    private Dialog showExitGameDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-        builder.setTitle("게임을 나가시겠습니까?")
+        return builder.setTitle("게임을 나가시겠습니까?")
                 .setNegativeButton("취소", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -642,8 +655,8 @@ public class GameActivity extends AppCompatActivity {
                         outPlayerFromGameThread = new OutPlayerFromGameThread();
                         outPlayerFromGameThread.start();
                     }
-                })
-                .show();
+                }).create();
+
     }
 
     // 피니쉬 체크 메소드

@@ -39,6 +39,7 @@ public class ReadyActivity extends AppCompatActivity {
     private final String REFRESH_READY = "refreshReady";
     private final String START_READY = "startReady";
     private final String FULL_ROOM_READY = "foolRoomReady";
+    private final String ERROR_ROOM_READY = "errorRoomReady";
     private final String OUT_PLAYER1_READY = "outPlayer1Ready";
     private final String OUT_PLAYER2_READY = "outPlayer2Ready";
 
@@ -174,7 +175,7 @@ public class ReadyActivity extends AppCompatActivity {
                             btnPlayer2.setBackgroundColor(Color.YELLOW);
                         }
                         break;
-                    case 139: // 정원초과로 인한 ListActivity intent
+                    case 139: // 정원초과 또는 error방으로 인한 ListActivity intent
                         showFullRoomExitDialog();
                         break;
                     case 141: // GAME START
@@ -338,6 +339,10 @@ public class ReadyActivity extends AppCompatActivity {
                         Message msg = new Message();
                         msg.what = 139;
                         handler.sendMessage(msg);
+                    } else if (code.getCode().equals(ERROR_ROOM_READY)) {
+                        Message msg = new Message();
+                        msg.what = 139;
+                        handler.sendMessage(msg);
                     } else if (code.getCode().equals(START_READY)) { //player2 ready
                         Message msg = new Message();
                         msg.what = 143;
@@ -430,11 +435,11 @@ public class ReadyActivity extends AppCompatActivity {
                 .show();
     }
 
-    // 풀방 메시지 다이얼로그
+    // 풀방 또는 에러방 메시지 다이얼로그
     private void showFullRoomExitDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-        builder.setTitle("정원 초과")
+        builder.setTitle("정원 초과되었거나 유효하지 않은 방입니다")
                 .setPositiveButton("나가기", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -475,11 +480,11 @@ public class ReadyActivity extends AppCompatActivity {
 
         try {
             socket = new Socket(InetAddress.getByName(OptionValue.serverIp), portNum);
+            Log.d("chs", "소켓 생성 "+OptionValue.serverIp+" "+portNum);
             soos = new ObjectOutputStream(socket.getOutputStream());
             sois = new ObjectInputStream(socket.getInputStream());
             readyNetwork = true;
 
-            Log.d("chs", "client socket connected");
         } catch (IOException e) {
             e.printStackTrace();
             Toast.makeText(this, "서버 문제 발생", Toast.LENGTH_SHORT).show();
