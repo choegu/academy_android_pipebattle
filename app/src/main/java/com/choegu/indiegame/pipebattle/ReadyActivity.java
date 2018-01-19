@@ -47,13 +47,16 @@ public class ReadyActivity extends AppCompatActivity {
     // 방 입장 task
     private final String CREATE = "create";
     private final String ENTER = "enter";
+    private final String CUSTOM = "custom";
+    private final String NORMAL = "normal";
+    private final String RANK = "rank";
 
     // 네트워크 연결
     private int portNum;
     private ObjectInputStream sois;
     private ObjectOutputStream soos;
     private boolean readyNetwork = false, playerReady = false;
-    private String loginId, task;
+    private String loginId, task, mode;
     private Socket socket;
 
     // Layout
@@ -88,17 +91,21 @@ public class ReadyActivity extends AppCompatActivity {
         portNum = receiveIntent.getIntExtra("portNum", 0);
         loginId = receiveIntent.getStringExtra("loginId");
         task = receiveIntent.getStringExtra("task");
+        mode = receiveIntent.getStringExtra("mode");
 
-        if (task.equals(CREATE)) {
-            btnReadyStart.setText("START");
-            btnPlayer1.setText(loginId);
-            btnPlayer1.setBackgroundColor(Color.YELLOW);
-            btnPlayer2.setText(EMPTY);
-            btnPlayer2.setBackgroundColor(Color.GRAY);
-        } else if (task.equals(ENTER)) {
-            btnPlayer2.setText(loginId);
-            btnPlayer2.setBackgroundColor(Color.YELLOW);
+        if (mode.equals(CUSTOM)) {
+            if (task.equals(CREATE)) {
+                btnReadyStart.setText("START");
+                btnPlayer1.setText(loginId);
+                btnPlayer1.setBackgroundColor(Color.YELLOW);
+                btnPlayer2.setText(EMPTY);
+                btnPlayer2.setBackgroundColor(Color.GRAY);
+            } else if (task.equals(ENTER)) {
+                btnPlayer2.setText(loginId);
+                btnPlayer2.setBackgroundColor(Color.YELLOW);
+            }
         }
+
         btnReadyStart.setBackgroundColor(Color.GRAY);
 
         btnReadyStart.setOnClickListener(new View.OnClickListener() {
@@ -204,7 +211,7 @@ public class ReadyActivity extends AppCompatActivity {
                         showRoomCreatorExitDialog();
                         break;
                     case 147: // 2P 퇴장
-                        if (task.equals(CREATE)) {
+                        if (task.equals(CREATE) && mode.equals(CUSTOM)) {
                             receiveMsg = (ReadyCodeVO) msg.obj;
                             textReadyChat.append(receiveMsg.getPlayer2()+"님이 퇴장하였습니다.\n");
                             textReadyChat.setVerticalScrollbarPosition(textReadyChat.getText().length());
@@ -213,13 +220,21 @@ public class ReadyActivity extends AppCompatActivity {
                             btnPlayer2.setBackgroundColor(Color.GRAY);
                             btnReadyStart.setBackgroundColor(Color.GRAY);
                             playerReady = false;
-                        } else if (task.equals(ENTER)) {
+                        } else if (task.equals(ENTER) && mode.equals(CUSTOM)) {
                             readyRoomThread.interrupt();
                             readyCloseThread.start();
 
                             Intent intentOutPlayer2 = new Intent(ReadyActivity.this, ListActivity.class);
                             intentOutPlayer2.putExtra("loginId", loginId);
                             startActivity(intentOutPlayer2);
+                            finish();
+                        } else {
+                            readyRoomThread.interrupt();
+                            readyCloseThread.start();
+
+                            Intent intentOutStraight = new Intent(ReadyActivity.this, MainActivity.class);
+                            intentOutStraight.putExtra("loginId", loginId);
+                            startActivity(intentOutStraight);
                             finish();
                         }
                         break;
@@ -457,10 +472,15 @@ public class ReadyActivity extends AppCompatActivity {
                         readyRoomThread.interrupt();
                         readyCloseThread.start();
 
-                        Intent intent = new Intent(ReadyActivity.this, ListActivity.class);
-                        intent.putExtra("loginId", loginId);
-                        startActivity(intent);
-                        finish();
+                        if (mode.equals(CUSTOM)) {
+                            Intent intent = new Intent(ReadyActivity.this, ListActivity.class);
+                            intent.putExtra("loginId", loginId);
+                            startActivity(intent);
+                        } else {
+                            Intent intent = new Intent(ReadyActivity.this, MainActivity.class);
+                            intent.putExtra("loginId", loginId);
+                            startActivity(intent);
+                        }
                     }
                 })
                 .show();
@@ -477,9 +497,15 @@ public class ReadyActivity extends AppCompatActivity {
                         readyRoomThread.interrupt();
                         readyCloseThread.start();
 
-                        Intent intent = new Intent(ReadyActivity.this, ListActivity.class);
-                        intent.putExtra("loginId", loginId);
-                        startActivity(intent);
+                        if (mode.equals(CUSTOM)) {
+                            Intent intent = new Intent(ReadyActivity.this, ListActivity.class);
+                            intent.putExtra("loginId", loginId);
+                            startActivity(intent);
+                        } else {
+                            Intent intent = new Intent(ReadyActivity.this, MainActivity.class);
+                            intent.putExtra("loginId", loginId);
+                            startActivity(intent);
+                        }
                         finish();
                     }
                 })

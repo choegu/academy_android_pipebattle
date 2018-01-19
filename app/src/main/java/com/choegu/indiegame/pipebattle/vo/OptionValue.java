@@ -6,6 +6,7 @@ package com.choegu.indiegame.pipebattle.vo;
 
 public class OptionValue {
     public static String serverIp = "70.12.115.57";
+    public static int normalServerPort = 10001;
     public static int dbServerPort = 10010;
     public static String dbName = "PIPE_BATTLE";
     public static String dbPort = "3306";

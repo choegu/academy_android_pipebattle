@@ -95,6 +95,7 @@ public class ListActivity extends AppCompatActivity {
                     intent.putExtra("portNum", roomVOList.get(i).getPortNum());
                     intent.putExtra("loginId", loginId);
                     intent.putExtra("task", "enter");
+                    intent.putExtra("mode", "custom");
                     startActivity(intent);
                     finish();
                     closeNetworkThread = new CloseListThread();
@@ -135,6 +136,7 @@ public class ListActivity extends AppCompatActivity {
                         intent.putExtra("portNum", msg.arg1);
                         intent.putExtra("loginId", loginId);
                         intent.putExtra("task", "create");
+                        intent.putExtra("mode", "custom");
 
                         try {
                             sois.close();
@@ -164,8 +166,7 @@ public class ListActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        closeNetworkThread.start();
-        super.onBackPressed();
+        showExitDialog();
     }
 
     // 새로고침 쓰레드
@@ -329,6 +330,31 @@ public class ListActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         dialogInterface.cancel();
+                    }
+                })
+                .show();
+    }
+
+    // 목록 나가기 다이얼로그
+    private void showExitDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("메인화면으로 나가시겠습니까?")
+                .setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.cancel();
+                    }
+                })
+                .setPositiveButton("나가기", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        closeNetworkThread.start();
+                        dialogInterface.cancel();
+                        Intent intent = new Intent(ListActivity.this, MainActivity.class);
+                        intent.putExtra("loginId", loginId);
+                        startActivity(intent);
+                        finish();
                     }
                 })
                 .show();

@@ -1,5 +1,6 @@
 package com.choegu.indiegame.pipebattle;
 
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Handler;
@@ -16,6 +17,7 @@ import android.widget.Toast;
 
 import com.choegu.indiegame.pipebattle.vo.MemberCodeVO;
 import com.choegu.indiegame.pipebattle.vo.OptionValue;
+import com.choegu.indiegame.pipebattle.vo.SearchNormalCodeVO;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -30,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
     private final String ID_PASSWORD_ERROR = "idPasswordError";
     private final String ID_EXIST_ERROR = "idExistError";
     private final String JOIN_FAILED_ETC = "joinFailedEtc";
+    private final String SEARCH_NORMAL = "searchNormal";
+    private final String WAITING_SEARCH = "waitingSearch";
 
     // 네트워크 연결
     private Socket socket;
@@ -44,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
     // 쓰레드
     private LoginCheckThread loginCheckThread;
     private JoinCallThread joinCallThread;
+    private SearchNormalThread searchNormalThread;
+    private CloseMainSocketThread closeMainSocketThread;
     private Handler handler;
 
     @Override
@@ -60,6 +66,19 @@ public class MainActivity extends AppCompatActivity {
         btnSetting = findViewById(R.id.btn_setting);
         btnRanking = findViewById(R.id.btn_ranking);
         btnExit = findViewById(R.id.btn_exit);
+
+        Intent receiveIntent = getIntent();
+        if (receiveIntent.getStringExtra("loginId")!=null) {
+            loginId = receiveIntent.getStringExtra("loginId");
+        }
+
+        if (loginId.trim().equals("")) { // 로그아웃 상태
+            textMainWelcome.setText("로그인 후 이용할 수 있습니다.");
+            btnLoginLogout.setText("로그인");
+        } else { // 로그인 상태
+            textMainWelcome.setText(loginId+"님 환영합니다.");
+            btnLoginLogout.setText("로그아웃");
+        }
 
         // 로그인 로그아웃
         btnLoginLogout.setOnClickListener(new View.OnClickListener() {
@@ -100,7 +119,11 @@ public class MainActivity extends AppCompatActivity {
         btnEnterNormal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                if (loginId.trim().equals("")) { // 로그인 후 이용 가능 메세지
+                    showMessageDialog("로그인 후 입장할 수 있습니다.");
+                } else { // 노멀 접속
+                    makeSearchNormalDialog().show();
+                }
             }
         });
 
@@ -162,6 +185,21 @@ public class MainActivity extends AppCompatActivity {
                     case 52: // 로그인 실패
                         showMessageDialog("ID와 비밀번호를 확인하십시오.");
                         break;
+                    case 61: // 방으로 인텐트
+                        SearchNormalCodeVO codeVO = (SearchNormalCodeVO) msg.obj;
+                        Intent intent = new Intent(MainActivity.this, ReadyActivity.class);
+                        intent.putExtra("portNum", codeVO.getPortNum());
+                        intent.putExtra("loginId", loginId);
+                        if (codeVO.getMessage().equals("create")) {
+                            intent.putExtra("task", "create");
+                        } else if (codeVO.getMessage().equals("enter")) {
+                            intent.putExtra("task", "enter");
+                        }
+                        intent.putExtra("mode", "normal");
+                        startActivity(intent);
+                        finish();
+
+                        break;
                 }
             }
         };
@@ -184,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void run() {
-            initNetwork();
+            initNetworkMember();
             MemberCodeVO codeVO = new MemberCodeVO();
             codeVO.setCode(MEMBER_LOGIN_CHECK);
             codeVO.setMemberId(id);
@@ -232,7 +270,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void run() {
-            initNetwork();
+            initNetworkMember();
             MemberCodeVO codeVO = new MemberCodeVO();
             codeVO.setCode(MEMBER_JOIN);
             codeVO.setMemberId(id);
@@ -271,10 +309,81 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // 노멀 서치 쓰레드
+    class SearchNormalThread extends Thread {
+        @Override
+        public void run() {
+            initNetworkNormal();
+            Log.d("chsn", "노멀 서버 연결");
+
+            SearchNormalCodeVO codeVO = new SearchNormalCodeVO();
+            codeVO.setCode(SEARCH_NORMAL);
+            try {
+                sleep(500);
+                soos.writeObject(codeVO);
+                soos.flush();
+
+                codeVO = (SearchNormalCodeVO) sois.readObject();
+                Log.d("chsn", codeVO.toString());
+
+                if (codeVO.getCode().equals(WAITING_SEARCH)) {
+                    codeVO = (SearchNormalCodeVO) sois.readObject();
+                    Log.d("chsn", codeVO.toString());
+                }
+
+                Message msg = new Message();
+                msg.what = 61; // 방으로 인텐트
+                msg.obj = codeVO;
+                handler.sendMessage(msg);
+
+                sois.close();
+                soos.close();
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    // close socket thread
+    class CloseMainSocketThread extends Thread {
+        @Override
+        public void run() {
+            try {
+                sois.close();
+                soos.close();
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     // DB 서버연결
-    private void initNetwork() {
+    private void initNetworkMember() {
         try {
             socket = new Socket(InetAddress.getByName(OptionValue.serverIp), OptionValue.dbServerPort); // DB port
+            soos = new ObjectOutputStream(socket.getOutputStream());
+            sois = new ObjectInputStream(socket.getInputStream());
+            // 입장 직후 방목록 정보 서버로부터 receive
+            // thread이므로 handler 통해 main thread로 보냄
+            // handler 쪽에서는 방 화면을 갱신.
+            Log.d("yyj", "client socket connected to db server");
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "서버 문제 발생", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // Normal 서버연결
+    private void initNetworkNormal() {
+        try {
+            socket = new Socket(InetAddress.getByName(OptionValue.serverIp), OptionValue.normalServerPort); // Normal port
             soos = new ObjectOutputStream(socket.getOutputStream());
             sois = new ObjectInputStream(socket.getInputStream());
             // 입장 직후 방목록 정보 서버로부터 receive
@@ -408,6 +517,31 @@ public class MainActivity extends AppCompatActivity {
                     }
                 })
                 .show();
+    }
+
+    private Dialog makeSearchNormalDialog() {
+        // 노말 찾는 쓰레드 들어가야함
+        searchNormalThread = new SearchNormalThread();
+        searchNormalThread.start();
+
+        Dialog searchNormalDialog;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        searchNormalDialog = builder.setTitle("노멀게임 : 상대를 검색하는 중입니다.")
+                .setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        // 클로즈 쓰레드 들어가야함
+                        closeMainSocketThread = new CloseMainSocketThread();
+                        closeMainSocketThread.start();
+                        dialogInterface.cancel();
+                    }
+                })
+                .create();
+
+        searchNormalDialog.setCancelable(false);
+        searchNormalDialog.setCanceledOnTouchOutside(false);
+
+        return searchNormalDialog;
     }
 
 }

@@ -266,7 +266,7 @@ public class GameActivity extends AppCompatActivity {
                             gameStartThread.interrupt();
                             gameCloseThread.start();
 
-                            Intent intent = new Intent(GameActivity.this, ListActivity.class);
+                            Intent intent = new Intent(GameActivity.this, MainActivity.class);
                             intent.putExtra("loginId", loginId);
                             startActivity(intent);
                             finish();
@@ -281,7 +281,7 @@ public class GameActivity extends AppCompatActivity {
                             gameStartThread.interrupt();
                             gameCloseThread.start();
 
-                            Intent intent = new Intent(GameActivity.this, ListActivity.class);
+                            Intent intent = new Intent(GameActivity.this, MainActivity.class);
                             intent.putExtra("loginId", loginId);
                             startActivity(intent);
                             finish();
@@ -680,7 +680,7 @@ public class GameActivity extends AppCompatActivity {
                 gameStartThread.interrupt();
                 gameCloseThread.start();
 
-                Intent intent = new Intent(GameActivity.this, ListActivity.class);
+                Intent intent = new Intent(GameActivity.this, MainActivity.class);
                 intent.putExtra("loginId", loginId);
                 startActivity(intent);
                 finish();
