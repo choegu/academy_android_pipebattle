@@ -224,7 +224,6 @@ public class ListActivity extends AppCompatActivity {
         @Override
         public void run() {
             try {
-//                soos.reset();
                 Log.d("yyj", "soos:"+soos);
                 soos.writeObject(codeVO);
                 soos.flush();

@@ -7,10 +7,19 @@
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="게임에 사용할 ID를 입력"
+        android:hint="ID"
         android:id="@+id/login_edit_id"
         android:maxLines="1"
         android:minLines="1"
         app:layout_constraintTop_toTopOf="parent"/>
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="PASSWORD"
+        android:id="@+id/login_edit_password"
+        android:maxLines="1"
+        android:minLines="1"
+        android:inputType="textPassword"
+        app:layout_constraintTop_toBottomOf="@id/login_edit_id"/>
 
 </android.support.constraint.ConstraintLayout>

@@ -3,6 +3,8 @@ package com.choegu.indiegame.pipebattle;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -21,6 +23,8 @@ import com.choegu.indiegame.pipebattle.vo.FinishCheckVO;
 import com.choegu.indiegame.pipebattle.vo.GameCodeVO;
 import com.choegu.indiegame.pipebattle.vo.OptionValue;
 import com.choegu.indiegame.pipebattle.vo.TileVO;
+
+import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -65,7 +69,8 @@ public class GameActivity extends AppCompatActivity {
     private EnemyGameAdapter enemyGameAdapter, attackDialogAdapter;
     private AttackGameAdapter attackGameAdapter;
     private NextGameAdapter nextGameAdapter;
-    private Dialog currentDialog;
+    private Dialog currentDialog, loadingDialog;
+    private TextView textLoading;
 
     // 쓰레드
     private GameStartThread gameStartThread;
@@ -73,6 +78,7 @@ public class GameActivity extends AppCompatActivity {
     private GameCloseThread gameCloseThread;
     private OutPlayerFromGameThread outPlayerFromGameThread;
     private GameFinishNoticeThread gameFinishNoticeThread;
+    private GameLoadingThread gameLoadingThread;
     private Handler handler;
 
     // 파이프게임 로직
@@ -105,6 +111,9 @@ public class GameActivity extends AppCompatActivity {
         gridViewEnemy = findViewById(R.id.gridView_enemy_game);
         gridViewAttack = findViewById(R.id.gridView_attack_item);
         gridViewNext = findViewById(R.id.gridView_next_tile);
+
+        loadingDialog = makeLoadingDialog();
+        loadingDialog.show(); // 로딩 다이얼로그
 
         random = new Random();
 
@@ -222,12 +231,30 @@ public class GameActivity extends AppCompatActivity {
 
                 switch (handlerMsg) {
                     case 151: // 게임 로딩 서로 완료 : 나중에 카운트로 수정
-                        Toast.makeText(GameActivity.this, "서로 로딩완료 되었습니다", Toast.LENGTH_SHORT).show();
+                        switch (msg.arg1) {
+                            case 3:
+                                textLoading.setText("3");
+                                break;
+                            case 2:
+                                textLoading.setText("2");
+                                break;
+                            case 1:
+                                textLoading.setText("1");
+                                break;
+                            case 0:
+                                textLoading.setText("GO");
+                                break;
+                            case -1:
+                                loadingDialog.cancel();
+                                break;
+                        }
                         break;
                     case 161: // Player 메인 게임 클릭
                         receiveMsg = (GameCodeVO) msg.obj;
-                        tileVOListEnemy.get(receiveMsg.getTileNum()).setType(receiveMsg.getTileType());
-                        enemyGameAdapter.notifyDataSetChanged();
+                        if (tileVOListEnemy.get(receiveMsg.getTileNum()).getType()!=EXPLOSION){
+                            tileVOListEnemy.get(receiveMsg.getTileNum()).setType(receiveMsg.getTileType());
+                            enemyGameAdapter.notifyDataSetChanged();
+                        }
                         break;
                     case 162: // 공격 받음
                         receiveMsg = (GameCodeVO) msg.obj;
@@ -326,6 +353,7 @@ public class GameActivity extends AppCompatActivity {
         gameStartThread.start();
 
         gameCloseThread = new GameCloseThread();
+        gameLoadingThread = new GameLoadingThread();
     }
 
     @Override
@@ -358,9 +386,7 @@ public class GameActivity extends AppCompatActivity {
                     GameCodeVO code = (GameCodeVO) sois.readObject();
 
                     if (code.getCode().equals(LOADING_COMPLETE_GAME)) {
-                        Message msg = new Message();
-                        msg.what = 151;
-                        handler.sendMessage(msg);
+                        gameLoadingThread.start();
                     } else if (code.getCode().equals(CLICK_MAIN_GAME)) {
                         if (code.getPlayer1()!=null && !code.getPlayer1().isEmpty() && task.equals(ENTER)) {
                             Message msg = new Message();
@@ -542,6 +568,47 @@ public class GameActivity extends AppCompatActivity {
         }
     }
 
+    // 로딩 쓰레드
+    class GameLoadingThread extends Thread {
+        @Override
+        public void run() {
+            try {
+                Message msg;
+
+                msg = new Message();
+                msg.what = 151;
+                msg.arg1 = 3;
+                handler.sendMessage(msg);
+                sleep(1000);
+
+                msg = new Message();
+                msg.what = 151;
+                msg.arg1 = 2;
+                handler.sendMessage(msg);
+                sleep(1000);
+
+                msg = new Message();
+                msg.what = 151;
+                msg.arg1 = 1;
+                handler.sendMessage(msg);
+                sleep(1000);
+
+                msg = new Message();
+                msg.what = 151;
+                msg.arg1 = 0;
+                handler.sendMessage(msg);
+                sleep(1000);
+
+                msg = new Message();
+                msg.what = 151;
+                msg.arg1 = -1;
+                handler.sendMessage(msg);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     // Game Room 서버연결
     private boolean initNetwork() {
 
@@ -596,7 +663,6 @@ public class GameActivity extends AppCompatActivity {
     private Dialog makeFinishDialog(boolean winLose) {
         final Dialog finishDialog = new Dialog(this);
         finishDialog.setContentView(R.layout.dialog_finish);
-        finishDialog.setCanceledOnTouchOutside(false);
 
         TextView textFinishResult = finishDialog.findViewById(R.id.finish_text_result);
         Button btnFinishOk = finishDialog.findViewById(R.id.finish_btn_ok);
@@ -620,6 +686,9 @@ public class GameActivity extends AppCompatActivity {
                 finish();
             }
         });
+
+        finishDialog.setCanceledOnTouchOutside(false);
+        finishDialog.setCancelable(false);
 
         return finishDialog;
     }
@@ -658,6 +727,21 @@ public class GameActivity extends AppCompatActivity {
                     }
                 }).create();
 
+    }
+
+    // 로딩 다이얼로그
+    private Dialog makeLoadingDialog() {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_loading, null);
+        TextView textLoading = dialogView.findViewById(R.id.text_loading);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        Dialog dialog = builder.setView(dialogView).create();
+        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        dialog.setCancelable(false);
+
+        this.textLoading = textLoading;
+
+        return dialog;
     }
 
     // 피니쉬 체크 메소드

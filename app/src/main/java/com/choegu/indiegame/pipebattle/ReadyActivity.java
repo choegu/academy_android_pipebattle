@@ -57,7 +57,7 @@ public class ReadyActivity extends AppCompatActivity {
     private Socket socket;
 
     // Layout
-    private Button btnReadyStart, btnReadyX, btnReadySend, btnPlayer1, btnPlayer2;
+    private Button btnReadyStart, btnReadySend, btnPlayer1, btnPlayer2;
     private TextView textReadyChat;
     private EditText editReadymsg;
     private InputMethodManager imm;
@@ -77,7 +77,6 @@ public class ReadyActivity extends AppCompatActivity {
         setContentView(R.layout.activity_ready);
 
         btnReadyStart = findViewById(R.id.btn_ready_start);
-        btnReadyX = findViewById(R.id.btn_ready_x);
         btnReadySend = findViewById(R.id.btn_ready_send);
         btnPlayer1 = findViewById(R.id.btn_player1);
         btnPlayer2 = findViewById(R.id.btn_player2);
@@ -107,13 +106,6 @@ public class ReadyActivity extends AppCompatActivity {
             public void onClick(View view) {
                 readyStartThread = new ReadyStartThread();
                 readyStartThread.start();
-            }
-        });
-
-        btnReadyX.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
             }
         });
 
