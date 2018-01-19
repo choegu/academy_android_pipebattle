@@ -184,12 +184,13 @@ public class GameActivity extends AppCompatActivity {
                     clickMainGameThread.start();
 
                     // 클릭뉴카운트 5 될때마다 공격아이템 생성
-                    if ((clickNewCountMain%5) == 0) {
+                    if (clickNewCountMain == 5) {
                         tileVOListAttack.remove(3);
                         tileSample = new TileVO();
                         tileSample.setType(MISSILE);
                         tileVOListAttack.add(0, tileSample);
                         attackGameAdapter.notifyDataSetChanged();
+                        clickNewCountMain = 0;
                     }
                 } else if(i==0 || i==48) {
                     if (gameFinishCheck()) { // 성공

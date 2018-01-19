@@ -42,6 +42,7 @@ public class ReadyActivity extends AppCompatActivity {
     private final String ERROR_ROOM_READY = "errorRoomReady";
     private final String OUT_PLAYER1_READY = "outPlayer1Ready";
     private final String OUT_PLAYER2_READY = "outPlayer2Ready";
+    private final String DROP_PLAYER2_READY = "dropPlayer2Ready";
 
     // 방 입장 task
     private final String CREATE = "create";
@@ -99,6 +100,7 @@ public class ReadyActivity extends AppCompatActivity {
             btnPlayer2.setText(loginId);
             btnPlayer2.setBackgroundColor(Color.YELLOW);
         }
+        btnReadyStart.setBackgroundColor(Color.GRAY);
 
         btnReadyStart.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -167,6 +169,9 @@ public class ReadyActivity extends AppCompatActivity {
                             if (receiveMsg.getPlayer2()!=null && !receiveMsg.getPlayer2().isEmpty()) {
                                 btnPlayer2.setText(receiveMsg.getPlayer2());
                                 btnPlayer2.setBackgroundColor(Color.YELLOW);
+
+                                textReadyChat.append(receiveMsg.getPlayer2()+"님이 입장하였습니다.\n");
+                                textReadyChat.setVerticalScrollbarPosition(textReadyChat.getText().length());
                             }
                         } else if (task.equals(ENTER)) {
                             btnPlayer1.setText(receiveMsg.getPlayer1());
@@ -214,6 +219,8 @@ public class ReadyActivity extends AppCompatActivity {
 
                             btnPlayer2.setText(EMPTY);
                             btnPlayer2.setBackgroundColor(Color.GRAY);
+                            btnReadyStart.setBackgroundColor(Color.GRAY);
+                            playerReady = false;
                         } else if (task.equals(ENTER)) {
                             readyRoomThread.interrupt();
                             readyCloseThread.start();
@@ -222,6 +229,14 @@ public class ReadyActivity extends AppCompatActivity {
                             intentOutPlayer2.putExtra("loginId", loginId);
                             startActivity(intentOutPlayer2);
                             finish();
+                        }
+                        break;
+                    case 149: // 2P 비정상 종료
+                        if (task.equals(CREATE)) {
+                            btnPlayer2.setText(EMPTY);
+                            btnPlayer2.setBackgroundColor(Color.GRAY);
+                            btnReadyStart.setBackgroundColor(Color.GRAY);
+                            playerReady = false;
                         }
                         break;
                 }
@@ -362,6 +377,10 @@ public class ReadyActivity extends AppCompatActivity {
                         Message msg = new Message();
                         msg.what = 147;
                         msg.obj = code;
+                        handler.sendMessage(msg);
+                    } else if (code.getCode().equals(DROP_PLAYER2_READY)) { // 2P DROP
+                        Message msg = new Message();
+                        msg.what = 149;
                         handler.sendMessage(msg);
                     }
 
