@@ -53,6 +53,7 @@ public class GameActivity extends AppCompatActivity {
     // 방 입장 task
     private final String CREATE = "create";
     private final String ENTER = "enter";
+    private String player1, player2;
 
     // 네트워크 연결
     private int portNum;
@@ -70,7 +71,7 @@ public class GameActivity extends AppCompatActivity {
     private AttackGameAdapter attackGameAdapter;
     private NextGameAdapter nextGameAdapter;
     private Dialog currentDialog, loadingDialog;
-    private TextView textLoading;
+    private TextView textLoading, textGamePlayer1, textGamePlayer2;
 
     // 쓰레드
     private GameStartThread gameStartThread;
@@ -106,11 +107,18 @@ public class GameActivity extends AppCompatActivity {
         portNum = receiveIntent.getIntExtra("portNum", 0);
         loginId = receiveIntent.getStringExtra("loginId");
         task = receiveIntent.getStringExtra("task");
+        player1 = receiveIntent.getStringExtra("player1");
+        player2 = receiveIntent.getStringExtra("player2");
 
+        textGamePlayer1 = findViewById(R.id.text_game_player1);
+        textGamePlayer2 = findViewById(R.id.text_game_player2);
         gridViewMain = findViewById(R.id.gridView_main_game);
         gridViewEnemy = findViewById(R.id.gridView_enemy_game);
         gridViewAttack = findViewById(R.id.gridView_attack_item);
         gridViewNext = findViewById(R.id.gridView_next_tile);
+
+        textGamePlayer1.setText(player1);
+        textGamePlayer2.setText(player2);
 
         loadingDialog = makeLoadingDialog();
         loadingDialog.show(); // 로딩 다이얼로그
@@ -293,7 +301,7 @@ public class GameActivity extends AppCompatActivity {
                             if (receiveMsg.getPlayer1()!=null && !receiveMsg.getPlayer1().isEmpty()) {
                                 makeFinishDialog(true).show();
                             } else if (receiveMsg.getPlayer2()!=null && !receiveMsg.getPlayer2().isEmpty()) {
-                                if (currentDialog.isShowing()) {
+                                if (currentDialog!=null && currentDialog.isShowing()) {
                                     Log.d("chs", "다이얼로그 열림");
                                     currentDialog.cancel();
                                 }
@@ -302,7 +310,7 @@ public class GameActivity extends AppCompatActivity {
                         } else if (task.equals(ENTER)) {
                             Log.d("yyj","test:"+receiveMsg);
                             if (receiveMsg.getPlayer1()!=null && !receiveMsg.getPlayer1().isEmpty()) {
-                                if (currentDialog.isShowing()) {
+                                if (currentDialog!=null && currentDialog.isShowing()) {
                                     Log.d("chs", "다이얼로그 열림");
                                     currentDialog.cancel();
                                 }

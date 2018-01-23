@@ -2,34 +2,58 @@
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:padding="0dp"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="1"
-        android:textSize="20sp"
+        android:textSize="70sp"
         android:id="@+id/room_num"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
         />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="방 제목"
-        android:textSize="20sp"
+        android:textSize="30sp"
+        android:textStyle="bold"
         android:id="@+id/room_title"
         app:layout_constraintLeft_toRightOf="@id/room_num"/>
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="방 생성자"
-        android:id="@+id/room_creator"
+        android:text="방 생성자 : "
+        android:textSize="20sp"
+        android:id="@+id/room_creator_caption"
+        app:layout_constraintLeft_toRightOf="@id/room_num"
         app:layout_constraintTop_toBottomOf="@id/room_title"/>
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="1/5"
+        android:text="생성자ID"
+        android:textSize="20sp"
+        android:id="@+id/room_creator"
+        app:layout_constraintLeft_toRightOf="@id/room_creator_caption"
+        app:layout_constraintTop_toBottomOf="@id/room_title"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="접속 인원 수 : "
+        android:textSize="20sp"
+        android:id="@+id/room_player_num_caption"
+        app:layout_constraintLeft_toRightOf="@id/room_num"
+        app:layout_constraintTop_toBottomOf="@id/room_creator"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="현재 인원"
+        android:textSize="20sp"
         android:id="@+id/room_player_num"
+        app:layout_constraintLeft_toRightOf="@id/room_player_num_caption"
         app:layout_constraintTop_toBottomOf="@id/room_creator"/>
 
 

@@ -10,22 +10,24 @@ public class MemberCodeVO implements Serializable{
     /**
      *
      */
-    private static final long serialVersionUID = 4724459025658943067L;
+    private static final long serialVersionUID = 689072057520660748L;
     private String code;
     private int memberNum;
     private String memberId;
     private String password;
     private String message;
+    private int rating;
 
     public MemberCodeVO() {
     }
 
-    public MemberCodeVO(String code, int memberNum, String memberId, String password, String message) {
+    public MemberCodeVO(String code, int memberNum, String memberId, String password, String message, int rating) {
         this.code = code;
         this.memberNum = memberNum;
         this.memberId = memberId;
         this.password = password;
         this.message = message;
+        this.rating = rating;
     }
 
     public String getCode() {
@@ -68,6 +70,14 @@ public class MemberCodeVO implements Serializable{
         this.message = message;
     }
 
+    public int getRating() {
+        return rating;
+    }
+
+    public void setRating(int rating) {
+        this.rating = rating;
+    }
+
     @Override
     public String toString() {
         return "MemberCodeVO{" +
@@ -76,6 +86,7 @@ public class MemberCodeVO implements Serializable{
                 ", memberId='" + memberId + '\'' +
                 ", password='" + password + '\'' +
                 ", message='" + message + '\'' +
+                ", rating=" + rating +
                 '}';
     }
 }

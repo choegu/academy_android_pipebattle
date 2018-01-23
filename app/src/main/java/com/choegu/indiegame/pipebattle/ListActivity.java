@@ -44,7 +44,7 @@ public class ListActivity extends AppCompatActivity {
     private boolean rootNetwork;
 
     // Layout
-    private Button btnCreate, btnRefresh, btnListX;
+    private Button btnCreate, btnRefresh;
     private ListView listViewRoom;
     private List<RoomVO> roomVOList;
     private RoomAdapter adapter;
@@ -63,7 +63,6 @@ public class ListActivity extends AppCompatActivity {
 
         btnCreate = findViewById(R.id.btn_create);
         btnRefresh = findViewById(R.id.btn_refresh);
-        btnListX = findViewById(R.id.btn_list_x);
         listViewRoom = findViewById(R.id.listview_room);
 
         Intent receiveIntent = getIntent();
@@ -112,14 +111,6 @@ public class ListActivity extends AppCompatActivity {
             public void onClick(View view) {
                 refresh = new RefreshRoomThread();
                 refresh.start();
-            }
-        });
-
-        // X
-        btnListX.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
             }
         });
 

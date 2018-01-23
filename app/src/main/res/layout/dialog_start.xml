@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TIER : "
+        android:textSize="25sp"
+        android:id="@+id/text_start_tier_caption"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="25sp"
+        android:id="@+id/text_start_tier"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toRightOf="@id/text_start_tier_caption"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="RATING : "
+        android:textSize="25sp"
+        android:id="@+id/text_start_rating_caption"
+        app:layout_constraintTop_toBottomOf="@id/text_start_tier_caption"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="25sp"
+        android:id="@+id/text_start_rating"
+        app:layout_constraintTop_toBottomOf="@id/text_start_tier_caption"
+        app:layout_constraintLeft_toRightOf="@id/text_start_rating_caption"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="커스텀 게임"
+        android:id="@+id/btn_enter_custom"
+        app:layout_constraintTop_toBottomOf="@id/text_start_rating_caption"
+        />
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="노멀 게임"
+        android:id="@+id/btn_enter_normal"
+        app:layout_constraintTop_toBottomOf="@id/btn_enter_custom"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="랭크 게임"
+        android:id="@+id/btn_enter_rank"
+        app:layout_constraintTop_toBottomOf="@id/btn_enter_normal"/>
+
+</android.support.constraint.ConstraintLayout>

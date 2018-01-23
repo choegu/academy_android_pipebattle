@@ -1,5 +1,6 @@
 package com.choegu.indiegame.pipebattle;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -56,7 +57,7 @@ public class ReadyActivity extends AppCompatActivity {
     private ObjectInputStream sois;
     private ObjectOutputStream soos;
     private boolean readyNetwork = false, playerReady = false;
-    private String loginId, task, mode;
+    private String loginId, task, mode, player1, player2;
     private Socket socket;
 
     // Layout
@@ -104,6 +105,16 @@ public class ReadyActivity extends AppCompatActivity {
                 btnPlayer2.setText(loginId);
                 btnPlayer2.setBackgroundColor(Color.YELLOW);
             }
+        } else {
+            if (task.equals(CREATE)) {
+                btnReadyStart.setText("START");
+            }
+            player1 = receiveIntent.getStringExtra("player1");
+            player2 = receiveIntent.getStringExtra("player2");
+            btnPlayer1.setText(player1);
+            btnPlayer1.setBackgroundColor(Color.YELLOW);
+            btnPlayer2.setText(player2);
+            btnPlayer2.setBackgroundColor(Color.YELLOW);
         }
 
         btnReadyStart.setBackgroundColor(Color.GRAY);
@@ -171,12 +182,17 @@ public class ReadyActivity extends AppCompatActivity {
 
                                 textReadyChat.append(receiveMsg.getPlayer2()+"님이 입장하였습니다.\n");
                                 textReadyChat.setVerticalScrollbarPosition(textReadyChat.getText().length());
+
+                                player1 = loginId;
+                                player2 = receiveMsg.getPlayer2();
                             }
                         } else if (task.equals(ENTER)) {
                             btnPlayer1.setText(receiveMsg.getPlayer1());
                             btnPlayer1.setBackgroundColor(Color.YELLOW);
                             btnPlayer2.setText(receiveMsg.getPlayer2());
                             btnPlayer2.setBackgroundColor(Color.YELLOW);
+                            player1 = receiveMsg.getPlayer1();
+                            player2 = receiveMsg.getPlayer2();
                         }
                         break;
                     case 139: // 정원초과 또는 error방으로 인한 ListActivity intent
@@ -191,6 +207,8 @@ public class ReadyActivity extends AppCompatActivity {
                         } else if (task.equals(ENTER)) {
                             intent.putExtra("task", ENTER);
                         }
+                        intent.putExtra("player1", player1);
+                        intent.putExtra("player2", player2);
                         startActivity(intent);
                         finish();
 
@@ -208,7 +226,7 @@ public class ReadyActivity extends AppCompatActivity {
                         Toast.makeText(ReadyActivity.this, "상대방이 준비 완료되지 않았습니다", Toast.LENGTH_SHORT).show();
                         break;
                     case 146: // 방장에 의한 방 종료
-                        showRoomCreatorExitDialog();
+                        showRoomCreatorExitDialog().show();
                         break;
                     case 147: // 2P 퇴장
                         if (task.equals(CREATE) && mode.equals(CUSTOM)) {
@@ -229,13 +247,7 @@ public class ReadyActivity extends AppCompatActivity {
                             startActivity(intentOutPlayer2);
                             finish();
                         } else {
-                            readyRoomThread.interrupt();
-                            readyCloseThread.start();
-
-                            Intent intentOutStraight = new Intent(ReadyActivity.this, MainActivity.class);
-                            intentOutStraight.putExtra("loginId", loginId);
-                            startActivity(intentOutStraight);
-                            finish();
+                            makeNormalPlayer2ExitDialog().show();
                         }
                         break;
                     case 149: // 2P 비정상 종료
@@ -487,10 +499,10 @@ public class ReadyActivity extends AppCompatActivity {
     }
 
     // 방장에 의한 종료 다이얼로그
-    private void showRoomCreatorExitDialog() {
+    private Dialog showRoomCreatorExitDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-        builder.setTitle("방장에 의해 종료됩니다")
+        Dialog dialog = builder.setTitle("방장에 의해 종료됩니다")
                 .setPositiveButton("나가기", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
@@ -509,7 +521,33 @@ public class ReadyActivity extends AppCompatActivity {
                         finish();
                     }
                 })
-                .show();
+                .create();
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
+        return dialog;
+    }
+
+    // 매칭 게임에서 P2 종료 다이얼로그
+    private Dialog makeNormalPlayer2ExitDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        Dialog dialog = builder.setTitle("방장에 의해 종료됩니다")
+                .setPositiveButton("나가기", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        readyRoomThread.interrupt();
+                        readyCloseThread.start();
+
+                        Intent intentOutStraight = new Intent(ReadyActivity.this, MainActivity.class);
+                        intentOutStraight.putExtra("loginId", loginId);
+                        startActivity(intentOutStraight);
+                        finish();
+                    }
+                })
+                .create();
+        dialog.setCancelable(false);
+        dialog.setCanceledOnTouchOutside(false);
+        return dialog;
     }
 
     // Ready Room 서버연결
