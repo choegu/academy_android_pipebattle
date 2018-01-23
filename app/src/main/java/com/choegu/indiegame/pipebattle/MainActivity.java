@@ -51,9 +51,10 @@ public class MainActivity extends AppCompatActivity {
 
     // Layout
     private String loginId = "";
+    private int selectRating;
     private TextView textMainWelcome, textStartTier, textStartRating;
     private Button btnLoginLogout, btnJoin, btnEnterStart, btnRanking;
-    private Dialog searchNormalDialog, searchRankDialog, searchCompleteDialog;
+    private Dialog searchNormalDialog, searchRankDialog, normalSearchCompleteDialog, rankSearchCompleteDialog;
     private RankingAdapter rankingAdapter;
     private List<MemberVO> rankingList;
 
@@ -157,36 +158,65 @@ public class MainActivity extends AppCompatActivity {
                     case 52: // 로그인 실패
                         showMessageDialog("ID와 비밀번호를 확인하십시오.");
                         break;
-                    case 61: // 방으로 인텐트
-                        SearchNormalCodeVO codeVO = (SearchNormalCodeVO) msg.obj;
-                        Intent intent = new Intent(MainActivity.this, ReadyActivity.class);
-                        intent.putExtra("portNum", codeVO.getPortNum());
-                        intent.putExtra("loginId", loginId);
-                        if (codeVO.getPlayer1().equals(loginId)) {
-                            intent.putExtra("task", "create");
-                        } else if (codeVO.getPlayer2().equals(loginId)) {
-                            intent.putExtra("task", "enter");
+                    case 61: // 노멀 방으로 인텐트
+                        SearchNormalCodeVO normalCodeVO = (SearchNormalCodeVO) msg.obj;
+                        Intent normalIntent = new Intent(MainActivity.this, ReadyActivity.class);
+                        normalIntent.putExtra("portNum", normalCodeVO.getPortNum());
+                        normalIntent.putExtra("loginId", loginId);
+                        if (normalCodeVO.getPlayer1().equals(loginId)) {
+                            normalIntent.putExtra("task", "create");
+                        } else if (normalCodeVO.getPlayer2().equals(loginId)) {
+                            normalIntent.putExtra("task", "enter");
                         }
-                        intent.putExtra("mode", "normal");
-                        intent.putExtra("player1", codeVO.getPlayer1());
-                        intent.putExtra("player2", codeVO.getPlayer2());
-                        if (searchCompleteDialog!=null && searchCompleteDialog.isShowing()) {
-                            searchCompleteDialog.cancel();
+                        normalIntent.putExtra("mode", "normal");
+                        normalIntent.putExtra("player1", normalCodeVO.getPlayer1());
+                        normalIntent.putExtra("player2", normalCodeVO.getPlayer2());
+                        if (normalSearchCompleteDialog!=null && normalSearchCompleteDialog.isShowing()) {
+                            normalSearchCompleteDialog.cancel();
                         }
-                        startActivity(intent);
+                        startActivity(normalIntent);
                         finish();
 
                         break;
-                    case 62: // 서치 완료
+                    case 62: // 노멀 서치 완료
                         if (searchNormalDialog!=null && searchNormalDialog.isShowing()) {
                             searchNormalDialog.cancel();
                         }
-                        searchCompleteDialog = makeSearchCompleteDialog();
-                        searchCompleteDialog.show();
+                        normalSearchCompleteDialog = makeNormalSearchCompleteDialog();
+                        normalSearchCompleteDialog.show();
+                        break;
+                    case 65: // 랭크 방으로 인텐트
+                        SearchRankCodeVO rankCodeVO = (SearchRankCodeVO) msg.obj;
+                        Intent rankIntent = new Intent(MainActivity.this, ReadyActivity.class);
+                        rankIntent.putExtra("portNum", rankCodeVO.getPortNum());
+                        rankIntent.putExtra("loginId", loginId);
+                        if (rankCodeVO.getPlayer1().equals(loginId)) {
+                            rankIntent.putExtra("task", "create");
+                        } else if (rankCodeVO.getPlayer2().equals(loginId)) {
+                            rankIntent.putExtra("task", "enter");
+                        }
+                        rankIntent.putExtra("mode", "rank");
+                        rankIntent.putExtra("player1", rankCodeVO.getPlayer1());
+                        rankIntent.putExtra("player2", rankCodeVO.getPlayer2());
+                        rankIntent.putExtra("ratingP1", rankCodeVO.getPlayer1Rating());
+                        rankIntent.putExtra("ratingP2", rankCodeVO.getPlayer2Rating());
+                        if (rankSearchCompleteDialog!=null && rankSearchCompleteDialog.isShowing()) {
+                            rankSearchCompleteDialog.cancel();
+                        }
+                        startActivity(rankIntent);
+                        finish();
+
+                        break;
+                    case 66: // 랭크 서치 완료
+                        if (searchRankDialog!=null && searchRankDialog.isShowing()) {
+                            searchRankDialog.cancel();
+                        }
+                        rankSearchCompleteDialog = makeRankSearchCompleteDialog();
+                        rankSearchCompleteDialog.show();
                         break;
                     case 71: // 레이팅 확인
                         receiveMsg = (MemberCodeVO) msg.obj;
-                        int selectRating = receiveMsg.getRating();
+                        selectRating = receiveMsg.getRating();
                         textStartRating.setText(selectRating+"");
 
                         if (selectRating < 1000) {
@@ -390,9 +420,8 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         list.setTier("GRAND MASTER");
                     }
+                    Log.i("chsr", list.toString());
                 }
-
-                rankingAdapter.notifyDataSetChanged();
 
                 Message msg = new Message();
                 msg.what = 73; // 레이팅 확인
@@ -464,12 +493,13 @@ public class MainActivity extends AppCompatActivity {
     class SearchRankThread extends Thread {
         @Override
         public void run() {
-            initNetworkNormal();
+            initNetworkRank();
             Log.d("chsn", "Rank 서버 연결");
 
             SearchRankCodeVO codeVO = new SearchRankCodeVO();
             codeVO.setCode(SEARCH_RANK);
             codeVO.setLoginId(loginId);
+            codeVO.setRating(selectRating);
 
             try {
                 sleep(500);
@@ -480,7 +510,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("chsn", codeVO.toString());
 
                 Message msg = new Message();
-                msg.what = 62; // 서치완료 메시지 1~2초
+                msg.what = 66; // 서치완료 메시지 1~2초
                 handler.sendMessage(msg);
 
                 if (codeVO.getPlayer1().equals(loginId)) {
@@ -490,7 +520,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 msg = new Message();
-                msg.what = 61; // 방으로 인텐트
+                msg.what = 65; // 방으로 인텐트
                 msg.obj = codeVO;
                 handler.sendMessage(msg);
 
@@ -806,8 +836,8 @@ public class MainActivity extends AppCompatActivity {
         return searchNormalDialog;
     }
 
-    // 서치 완료 다이얼로그
-    private Dialog makeSearchCompleteDialog() {
+    // 노멀 서치 완료 다이얼로그
+    private Dialog makeNormalSearchCompleteDialog() {
         Dialog dialog;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         dialog = builder.setTitle("상대를 찾았습니다.")
@@ -815,6 +845,19 @@ public class MainActivity extends AppCompatActivity {
 
         searchNormalDialog.setCancelable(false);
         searchNormalDialog.setCanceledOnTouchOutside(false);
+
+        return dialog;
+    }
+
+    // 노멀 서치 완료 다이얼로그
+    private Dialog makeRankSearchCompleteDialog() {
+        Dialog dialog;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        dialog = builder.setTitle("상대를 찾았습니다.")
+                .create();
+
+        searchRankDialog.setCancelable(false);
+        searchRankDialog.setCanceledOnTouchOutside(false);
 
         return dialog;
     }

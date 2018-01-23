@@ -53,7 +53,7 @@ public class ReadyActivity extends AppCompatActivity {
     private final String RANK = "rank";
 
     // 네트워크 연결
-    private int portNum;
+    private int portNum, ratingP1, ratingP2;
     private ObjectInputStream sois;
     private ObjectOutputStream soos;
     private boolean readyNetwork = false, playerReady = false;
@@ -62,7 +62,7 @@ public class ReadyActivity extends AppCompatActivity {
 
     // Layout
     private Button btnReadyStart, btnReadySend, btnPlayer1, btnPlayer2;
-    private TextView textReadyChat;
+    private TextView textReadyChat, textPlayer1Rating, textPlayer2Rating;
     private EditText editReadymsg;
     private InputMethodManager imm;
     private final String EMPTY = "empty";
@@ -84,6 +84,8 @@ public class ReadyActivity extends AppCompatActivity {
         btnReadySend = findViewById(R.id.btn_ready_send);
         btnPlayer1 = findViewById(R.id.btn_player1);
         btnPlayer2 = findViewById(R.id.btn_player2);
+        textPlayer1Rating = findViewById(R.id.text_player1_rating);
+        textPlayer2Rating = findViewById(R.id.text_player2_rating);
         textReadyChat = findViewById(R.id.text_ready_chat);
         editReadymsg = findViewById(R.id.edit_ready_msg);
         imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -105,7 +107,7 @@ public class ReadyActivity extends AppCompatActivity {
                 btnPlayer2.setText(loginId);
                 btnPlayer2.setBackgroundColor(Color.YELLOW);
             }
-        } else {
+        } else if (mode.equals(NORMAL)) {
             if (task.equals(CREATE)) {
                 btnReadyStart.setText("START");
             }
@@ -115,6 +117,20 @@ public class ReadyActivity extends AppCompatActivity {
             btnPlayer1.setBackgroundColor(Color.YELLOW);
             btnPlayer2.setText(player2);
             btnPlayer2.setBackgroundColor(Color.YELLOW);
+        } else {
+            if (task.equals(CREATE)) {
+                btnReadyStart.setText("START");
+            }
+            player1 = receiveIntent.getStringExtra("player1");
+            player2 = receiveIntent.getStringExtra("player2");
+            ratingP1 = receiveIntent.getIntExtra("ratingP1", 0);
+            ratingP2 = receiveIntent.getIntExtra("ratingP2", 0);
+            btnPlayer1.setText(player1);
+            btnPlayer1.setBackgroundColor(Color.YELLOW);
+            btnPlayer2.setText(player2);
+            btnPlayer2.setBackgroundColor(Color.YELLOW);
+            textPlayer1Rating.setText(ratingP1+"");
+            textPlayer2Rating.setText(ratingP2+"");
         }
 
         btnReadyStart.setBackgroundColor(Color.GRAY);
@@ -209,6 +225,12 @@ public class ReadyActivity extends AppCompatActivity {
                         }
                         intent.putExtra("player1", player1);
                         intent.putExtra("player2", player2);
+                        if (mode.equals(RANK)) {
+                            intent.putExtra("mode", RANK);
+                            intent.putExtra("ratingP1", ratingP1);
+                            intent.putExtra("ratingP2", ratingP2);
+                        }
+
                         startActivity(intent);
                         finish();
 

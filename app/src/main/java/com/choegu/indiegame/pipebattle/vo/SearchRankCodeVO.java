@@ -10,9 +10,10 @@ public class SearchRankCodeVO implements Serializable {
     /**
      *
      */
-    private static final long serialVersionUID = 2251755764454723990L;
+    private static final long serialVersionUID = 5720988873416325912L;
     private String code;
     private String loginId;
+    private int rating;
     private String message;
     private int portNum;
     private String player1;
@@ -23,9 +24,10 @@ public class SearchRankCodeVO implements Serializable {
     public SearchRankCodeVO() {
     }
 
-    public SearchRankCodeVO(String code, String loginId, String message, int portNum, String player1, String player2, int player1Rating, int player2Rating) {
+    public SearchRankCodeVO(String code, String loginId, int rating, String message, int portNum, String player1, String player2, int player1Rating, int player2Rating) {
         this.code = code;
         this.loginId = loginId;
+        this.rating = rating;
         this.message = message;
         this.portNum = portNum;
         this.player1 = player1;
@@ -48,6 +50,14 @@ public class SearchRankCodeVO implements Serializable {
 
     public void setLoginId(String loginId) {
         this.loginId = loginId;
+    }
+
+    public int getRating() {
+        return rating;
+    }
+
+    public void setRating(int rating) {
+        this.rating = rating;
     }
 
     public String getMessage() {
@@ -103,6 +113,7 @@ public class SearchRankCodeVO implements Serializable {
         return "SearchRankCodeVO{" +
                 "code='" + code + '\'' +
                 ", loginId='" + loginId + '\'' +
+                ", rating=" + rating +
                 ", message='" + message + '\'' +
                 ", portNum=" + portNum +
                 ", player1='" + player1 + '\'' +

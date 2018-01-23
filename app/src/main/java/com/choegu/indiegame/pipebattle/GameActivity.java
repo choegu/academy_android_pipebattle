@@ -21,6 +21,7 @@ import android.widget.Toast;
 
 import com.choegu.indiegame.pipebattle.vo.FinishCheckVO;
 import com.choegu.indiegame.pipebattle.vo.GameCodeVO;
+import com.choegu.indiegame.pipebattle.vo.MemberCodeVO;
 import com.choegu.indiegame.pipebattle.vo.OptionValue;
 import com.choegu.indiegame.pipebattle.vo.TileVO;
 
@@ -49,11 +50,14 @@ public class GameActivity extends AppCompatActivity {
     private final String OUT_PLAYER2_GAME = "outPlayer2Game";
     private final String GAME_FINISH_RESULT = "gameFinishResult";
     private final String GAME_ALREADY_END = "gameAlreadyEnd";
+    private final String MEMBER_UPDATE_RATING = "memberUpdateRating";
 
     // 방 입장 task
     private final String CREATE = "create";
     private final String ENTER = "enter";
-    private String player1, player2;
+    private final String RANK = "rank";
+    private String player1, player2, mode = "";
+    private int ratingP1, ratingP2;
 
     // 네트워크 연결
     private int portNum;
@@ -80,6 +84,7 @@ public class GameActivity extends AppCompatActivity {
     private OutPlayerFromGameThread outPlayerFromGameThread;
     private GameFinishNoticeThread gameFinishNoticeThread;
     private GameLoadingThread gameLoadingThread;
+    private UpdateRatingThread updateRatingThread;
     private Handler handler;
 
     // 파이프게임 로직
@@ -109,6 +114,12 @@ public class GameActivity extends AppCompatActivity {
         task = receiveIntent.getStringExtra("task");
         player1 = receiveIntent.getStringExtra("player1");
         player2 = receiveIntent.getStringExtra("player2");
+
+        if (receiveIntent.getStringExtra("mode")==null || receiveIntent.getStringExtra("mode").equals(RANK)) {
+            mode = RANK;
+            ratingP1 = receiveIntent.getIntExtra("ratingP1", 0);
+            ratingP2 = receiveIntent.getIntExtra("ratingP2", 0);
+        }
 
         textGamePlayer1 = findViewById(R.id.text_game_player1);
         textGamePlayer2 = findViewById(R.id.text_game_player2);
@@ -617,6 +628,52 @@ public class GameActivity extends AppCompatActivity {
         }
     }
 
+    // 랭크 종료 후 레이팅 업데이트 쓰레드
+    class UpdateRatingThread extends Thread {
+        private String updatePlayer1, updatePlayer2;
+        private int updateRatingP1, updateRatingP2;
+
+        public UpdateRatingThread(String updatePlayer1, String updatePlayer2, int updateRatingP1, int updateRatingP2) {
+            this.updatePlayer1 = updatePlayer1;
+            this.updatePlayer2 = updatePlayer2;
+            this.updateRatingP1 = updateRatingP1;
+            this.updateRatingP2 = updateRatingP2;
+        }
+
+        @Override
+        public void run() {
+            try {
+                initNetworkMember();
+                sleep(1000);
+                MemberCodeVO codeVO = new MemberCodeVO();
+                codeVO.setCode(MEMBER_UPDATE_RATING);
+                codeVO.setMemberId(updatePlayer1);
+                codeVO.setRating(updateRatingP1);
+                soos.writeObject(codeVO);
+                sois.close();
+                soos.close();
+                socket.close();
+
+                sleep(1000);
+
+                initNetworkMember();
+                sleep(1000);
+                codeVO = new MemberCodeVO();
+                codeVO.setCode(MEMBER_UPDATE_RATING);
+                codeVO.setMemberId(updatePlayer2);
+                codeVO.setRating(updateRatingP2);
+                soos.writeObject(codeVO);
+                sois.close();
+                soos.close();
+                socket.close();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     // Game Room 서버연결
     private boolean initNetwork() {
 
@@ -633,6 +690,22 @@ public class GameActivity extends AppCompatActivity {
         }
 
         return gameNetwork;
+    }
+
+    // DB 서버연결
+    private void initNetworkMember() {
+        try {
+            socket = new Socket(InetAddress.getByName(OptionValue.serverIp), OptionValue.dbServerPort); // DB port
+            soos = new ObjectOutputStream(socket.getOutputStream());
+            sois = new ObjectInputStream(socket.getInputStream());
+            // 입장 직후 방목록 정보 서버로부터 receive
+            // thread이므로 handler 통해 main thread로 보냄
+            // handler 쪽에서는 방 화면을 갱신.
+            Log.d("yyj", "client socket connected to db server");
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "서버 문제 발생", Toast.LENGTH_SHORT).show();
+        }
     }
 
     // 공격 다이얼로그
@@ -676,9 +749,34 @@ public class GameActivity extends AppCompatActivity {
         Button btnFinishOk = finishDialog.findViewById(R.id.finish_btn_ok);
 
         if (winLose) {
-            textFinishResult.setText("승리하였습니다");
+            if (mode.equals(RANK)) {
+                if (loginId.equals(player1)) { // 클라이언트가 P1이면
+                    ratingP1 = ratingP1 + 50;
+                    ratingP2 = ratingP2 - 50;
+                    textFinishResult.setText("승리하였습니다. Rating : "+ratingP1);
+                } else { // 클라이언트가 P2이면
+                    ratingP1 = ratingP1 - 50;
+                    ratingP2 = ratingP2 + 50;
+                    textFinishResult.setText("승리하였습니다. Rating : "+ratingP2);
+                }
+            updateRatingThread = new UpdateRatingThread(player1, player2, ratingP1, ratingP2);
+            updateRatingThread.start();
+
+            } else {
+                textFinishResult.setText("승리하였습니다.");
+            }
         } else {
-            textFinishResult.setText("패배하였습니다");
+            if (mode.equals(RANK)) {
+                if (loginId.equals(player1)) { // 클라이언트가 P1이면
+                    ratingP1 = ratingP1 - 50;
+                    textFinishResult.setText("패배하였습니다. Rating : "+ratingP1);
+                } else { // 클라이언트가 P2이면
+                    ratingP2 = ratingP2 - 50;
+                    textFinishResult.setText("패배하였습니다. Rating : "+ratingP2);
+                }
+            } else {
+                textFinishResult.setText("패배하였습니다.");
+            }
         }
         btnFinishOk.setOnClickListener(new View.OnClickListener() {
             @Override
