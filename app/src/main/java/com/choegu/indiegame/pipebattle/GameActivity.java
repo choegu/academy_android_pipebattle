@@ -5,10 +5,12 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
+import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -24,8 +26,6 @@ import com.choegu.indiegame.pipebattle.vo.GameCodeVO;
 import com.choegu.indiegame.pipebattle.vo.MemberCodeVO;
 import com.choegu.indiegame.pipebattle.vo.OptionValue;
 import com.choegu.indiegame.pipebattle.vo.TileVO;
-
-import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -56,7 +56,7 @@ public class GameActivity extends AppCompatActivity {
     private final String CREATE = "create";
     private final String ENTER = "enter";
     private final String RANK = "rank";
-    private String player1, player2, mode = "";
+    private String player1, player2;
     private int ratingP1, ratingP2;
 
     // 네트워크 연결
@@ -65,9 +65,10 @@ public class GameActivity extends AppCompatActivity {
     private ObjectInputStream sois;
     private ObjectOutputStream soos;
     private boolean gameNetwork = false;
-    private String loginId, task;
+    private String loginId, task, mode;
 
     // Layout
+    private ConstraintLayout rootActivity;
     private GridView gridViewMain, gridViewEnemy, gridViewAttack, gridViewNext;
     private List<TileVO> tileVOListMain, tileVOListEnemy, tileVOListAttack, tileVOListNext;
     private MainGameAdapter mainGameAdapter;
@@ -103,6 +104,9 @@ public class GameActivity extends AppCompatActivity {
     private List<Integer> moveToSouthImpossibleList;
     private List<Integer> moveToNorthImpossibleList;
 
+    // BGM
+    private MediaPlayer bgmPlayer;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -112,8 +116,11 @@ public class GameActivity extends AppCompatActivity {
         portNum = receiveIntent.getIntExtra("portNum", 0);
         loginId = receiveIntent.getStringExtra("loginId");
         task = receiveIntent.getStringExtra("task");
+        mode = receiveIntent.getStringExtra("mode");
         player1 = receiveIntent.getStringExtra("player1");
         player2 = receiveIntent.getStringExtra("player2");
+
+        OptionValue.task = task;
 
         if (receiveIntent.getStringExtra("mode")==null || receiveIntent.getStringExtra("mode").equals(RANK)) {
             mode = RANK;
@@ -121,12 +128,21 @@ public class GameActivity extends AppCompatActivity {
             ratingP2 = receiveIntent.getIntExtra("ratingP2", 0);
         }
 
+        rootActivity = findViewById(R.id.activity_game_root);
         textGamePlayer1 = findViewById(R.id.text_game_player1);
         textGamePlayer2 = findViewById(R.id.text_game_player2);
         gridViewMain = findViewById(R.id.gridView_main_game);
         gridViewEnemy = findViewById(R.id.gridView_enemy_game);
         gridViewAttack = findViewById(R.id.gridView_attack_item);
         gridViewNext = findViewById(R.id.gridView_next_tile);
+
+        if (OptionValue.task.equals(CREATE)) { // devil
+            rootActivity.setBackgroundResource(R.drawable.devil_back);
+            gridViewEnemy.setBackgroundResource(R.drawable.devil_small);
+        } else if (OptionValue.task.equals(ENTER)) { // angel
+            rootActivity.setBackgroundResource(R.drawable.angel_back);
+            gridViewEnemy.setBackgroundResource(R.drawable.angel_small);
+        }
 
         textGamePlayer1.setText(player1);
         textGamePlayer2.setText(player2);
@@ -186,6 +202,10 @@ public class GameActivity extends AppCompatActivity {
         gridViewEnemy.setAdapter(enemyGameAdapter);
         gridViewAttack.setAdapter(attackGameAdapter);
         gridViewNext.setAdapter(nextGameAdapter);
+
+        bgmPlayer = MediaPlayer.create(this, R.raw.hos_battlefield_of_eternity);
+        bgmPlayer.setLooping(true);
+        bgmPlayer.start();
 
         gridViewMain.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -379,6 +399,13 @@ public class GameActivity extends AppCompatActivity {
     public void onBackPressed() {
         currentDialog = showExitGameDialog();
         currentDialog.show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        bgmPlayer.stop();
+        bgmPlayer.release();
+        super.onDestroy();
     }
 
     // 방 생성 직후 네트워크 연결 및 코드 받는 쓰레드
@@ -716,6 +743,12 @@ public class GameActivity extends AppCompatActivity {
         GridView gridViewAttackDialog = attackDialog.findViewById(R.id.gridView_attack_dialog);
         attackDialogAdapter = new EnemyGameAdapter(this, R.layout.item_dialog_enemy, tileVOListEnemy);
         gridViewAttackDialog.setAdapter(attackDialogAdapter);
+
+        if (OptionValue.task.equals(CREATE)) { // devil
+            gridViewAttackDialog.setBackgroundResource(R.drawable.devil_small);
+        } else if (OptionValue.task.equals(ENTER)) { // angel
+            gridViewAttackDialog.setBackgroundResource(R.drawable.angel_small);
+        }
 
         gridViewAttackDialog.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override

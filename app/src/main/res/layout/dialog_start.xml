@@ -37,20 +37,20 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="커스텀 게임"
+        android:background="@drawable/custom_event"
         android:id="@+id/btn_enter_custom"
         app:layout_constraintTop_toBottomOf="@id/text_start_rating_caption"
         />
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="노멀 게임"
+        android:background="@drawable/normal_event"
         android:id="@+id/btn_enter_normal"
         app:layout_constraintTop_toBottomOf="@id/btn_enter_custom"/>
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="랭크 게임"
+        android:background="@drawable/rank_event"
         android:id="@+id/btn_enter_rank"
         app:layout_constraintTop_toBottomOf="@id/btn_enter_normal"/>
 

@@ -5,15 +5,15 @@ import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Binder;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
 
 /**
  * Created by student on 2018-01-22.
  */
 
 public class MusicService extends Service {
-    private MediaPlayer playerMainTheme ,playerBattleFieldOfEternity;
-    private MyBinder myBinder = new MyBinder();
+    private MediaPlayer player;
+
+    private IBinder mBinder = new MyBinder();
 
     class MyBinder extends Binder {
         MusicService getService() {
@@ -21,33 +21,47 @@ public class MusicService extends Service {
         }
     }
 
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return myBinder;
+    public IBinder onBind(Intent arg0) {
+        return mBinder;
     }
 
     @Override
     public void onCreate() {
-        playerMainTheme = MediaPlayer.create(this, R.raw.hos_main_theme );
-        playerBattleFieldOfEternity = MediaPlayer.create(this, R.raw.hos_battlefield_of_eternity);
+        super.onCreate();
 
-        playerMainTheme.setLooping(true);
-        playerBattleFieldOfEternity.setLooping(true);
-    }
-
-    public void startMainTheme() {
-        playerMainTheme.start();
-    }
-    public void stopMainTheme() {
-        playerMainTheme.stop();
+        player = MediaPlayer.create(this, R.raw.hos_main_theme);
+        player.setLooping(true); // Set looping
+        player.setVolume(100, 100);
     }
 
-    public void startBattleFieldOfEternity() {
-        playerBattleFieldOfEternity.start();
-    }
-    public void stopBattleFieldOfEternity() {
-        playerBattleFieldOfEternity.stop();
+    @Override
+    public boolean onUnbind(Intent intent) {
+        player.stop();
+        player.release();
+        return super.onUnbind(intent);
     }
 
+    public void musicPlay(){
+        player.start();
+    }
+
+    public void musicPause(){
+        player.pause();
+    }
+
+    public void musicStop(){
+        player.stop();
+        player = null;
+    }
+
+//    @Override
+//    public void onDestroy() {
+//        player.stop();
+//        player.release();
+//    }
+
+    @Override
+    public void onLowMemory() {
+
+    }
 }

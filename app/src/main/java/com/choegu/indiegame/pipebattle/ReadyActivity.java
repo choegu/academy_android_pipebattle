@@ -1,12 +1,15 @@
 package com.choegu.indiegame.pipebattle;
 
 import android.app.Dialog;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
@@ -74,6 +77,27 @@ public class ReadyActivity extends AppCompatActivity {
     private ReadyCloseThread readyCloseThread;
     private OutPlayerThread outPlayerThread;
     private Handler handler;
+
+    // BGM
+    private MusicService mService;
+    private boolean isBind= false;
+
+    ServiceConnection sconn = new ServiceConnection() {
+        @Override //서비스가 실행될 때 호출
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            MusicService.MyBinder myBinder = (MusicService.MyBinder) service;
+            mService = myBinder.getService();
+            isBind = true;
+            Log.e("yyj", "third onServiceConnected()");
+        }
+
+        @Override //서비스가 종료될 때 호출
+        public void onServiceDisconnected(ComponentName name) {
+            isBind = false;
+            mService = null;
+            Log.e("yyj", "third onServiceDisconnected()");
+        }
+    };
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -229,6 +253,10 @@ public class ReadyActivity extends AppCompatActivity {
                             intent.putExtra("mode", RANK);
                             intent.putExtra("ratingP1", ratingP1);
                             intent.putExtra("ratingP2", ratingP2);
+                        } else if (mode.equals(NORMAL)) {
+                            intent.putExtra("mode", NORMAL);
+                        } else if (mode.equals(CUSTOM)) {
+                            intent.putExtra("mode", CUSTOM);
                         }
 
                         startActivity(intent);
@@ -236,6 +264,8 @@ public class ReadyActivity extends AppCompatActivity {
 
                         readyCloseThread = new ReadyCloseThread();
                         readyCloseThread.start();
+
+                        unbindService(sconn); // BGM 종료
                         break;
                     case 143: // ready 완료
                         btnReadyStart.setBackgroundColor(Color.GREEN);
@@ -288,6 +318,44 @@ public class ReadyActivity extends AppCompatActivity {
         readyRoomThread.start();
 
         readyCloseThread = new ReadyCloseThread();
+
+        if(!isBind) {
+            bindService(new Intent(this, MusicService.class), sconn, Context.BIND_AUTO_CREATE);
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        if(isBind) {
+            Log.d("yyj", "play");
+            mService.musicPlay();
+        }
+
+        super.onStart();
+    }
+
+    boolean foreground;
+    boolean running;
+
+    @Override
+    public void onPause()
+    {
+        foreground = MusicHelper.isAppInForeground(this);
+        if(!foreground)
+        {
+            mService.musicPause();
+        }
+        super.onPause();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        running = MusicHelper.isAppRunning(this, "com.choegu.indiegame.pipebattle");
+        if(!running)
+        {
+            unbindService(sconn);
+        }
     }
 
     @Override

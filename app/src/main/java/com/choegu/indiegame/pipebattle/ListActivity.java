@@ -1,9 +1,13 @@
 package com.choegu.indiegame.pipebattle;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
@@ -55,6 +59,27 @@ public class ListActivity extends AppCompatActivity {
     private CreateRoomThread create;
     private CloseListThread closeNetworkThread;
     private Handler handler;
+
+    // BGM
+    private MusicService mService;
+    private boolean isBind= false;
+
+    ServiceConnection sconn = new ServiceConnection() {
+        @Override //서비스가 실행될 때 호출
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            MusicService.MyBinder myBinder = (MusicService.MyBinder) service;
+            mService = myBinder.getService();
+            isBind = true;
+            Log.e("yyj", "second onServiceConnected()");
+        }
+
+        @Override //서비스가 종료될 때 호출
+        public void onServiceDisconnected(ComponentName name) {
+            isBind = false;
+            mService = null;
+            Log.e("yyj", "second onServiceDisconnected()");
+        }
+    };
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -153,6 +178,56 @@ public class ListActivity extends AppCompatActivity {
                 }
             }
         };
+
+        if(!isBind) {
+            bindService(new Intent(this, MusicService.class), sconn, Context.BIND_AUTO_CREATE);
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        if(isBind) {
+            Log.d("yyj", "play");
+            mService.musicPlay();
+        }
+
+        super.onStart();
+    }
+
+    boolean foreground;
+    boolean running;
+
+//    @Override
+//    public void onPause()
+//    {
+//        foreground = MusicHelper.isAppInForeground(this);
+//        if(!foreground)
+//        {
+//            mService.musicPause();
+//        }
+//        super.onPause();
+//    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        running = MusicHelper.isAppRunning(this, "com.choegu.indiegame.pipebattle");
+        Log.d("yyj", "stop music main"+running);
+        foreground = MusicHelper.isAppInForeground(this);
+        Log.d("yyj2", "stop music main"+foreground+"/"+isBind);
+        if(!foreground && isBind){
+            mService.musicPause();
+        }
+        if(!running)
+        {
+            unbindService(sconn);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        unbindService(sconn);
+        super.onDestroy();
     }
 
     @Override
@@ -345,7 +420,7 @@ public class ListActivity extends AppCompatActivity {
                         Intent intent = new Intent(ListActivity.this, MainActivity.class);
                         intent.putExtra("loginId", loginId);
                         startActivity(intent);
-                        finish();
+                        ListActivity.this.finish();
                     }
                 })
                 .show();

@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 
+import com.choegu.indiegame.pipebattle.vo.OptionValue;
 import com.choegu.indiegame.pipebattle.vo.TileVO;
 
 import java.util.List;
@@ -22,6 +23,10 @@ public class NextGameAdapter extends ArrayAdapter<TileVO>{
     private Activity context;
     private int layout;
     private List<TileVO> tileVOList;
+
+    // 방 입장 task
+    private final String CREATE = "create";
+    private final String ENTER = "enter";
 
     public NextGameAdapter(@NonNull Context context, int resource, @NonNull List<TileVO> objects) {
         super(context, resource, objects);
@@ -59,22 +64,46 @@ public class NextGameAdapter extends ArrayAdapter<TileVO>{
             case -1:
                 break;
             case 0:
-                holder.imageTile.setImageResource(R.drawable.pipe0);
+                if (OptionValue.task.equals(CREATE)) {
+                    holder.imageTile.setImageResource(R.drawable.angel_pipe0);
+                } else if (OptionValue.task.equals(ENTER)) {
+                    holder.imageTile.setImageResource(R.drawable.devil_pipe0);
+                }
                 break;
             case 1:
-                holder.imageTile.setImageResource(R.drawable.pipe1);
+                if (OptionValue.task.equals(CREATE)) {
+                    holder.imageTile.setImageResource(R.drawable.angel_pipe1);
+                } else if (OptionValue.task.equals(ENTER)) {
+                    holder.imageTile.setImageResource(R.drawable.devil_pipe1);
+                }
                 break;
             case 2:
-                holder.imageTile.setImageResource(R.drawable.pipe2);
+                if (OptionValue.task.equals(CREATE)) {
+                    holder.imageTile.setImageResource(R.drawable.angel_pipe2);
+                } else if (OptionValue.task.equals(ENTER)) {
+                    holder.imageTile.setImageResource(R.drawable.devil_pipe2);
+                }
                 break;
             case 3:
-                holder.imageTile.setImageResource(R.drawable.pipe3);
+                if (OptionValue.task.equals(CREATE)) {
+                    holder.imageTile.setImageResource(R.drawable.angel_pipe3);
+                } else if (OptionValue.task.equals(ENTER)) {
+                    holder.imageTile.setImageResource(R.drawable.devil_pipe3);
+                }
                 break;
             case 4:
-                holder.imageTile.setImageResource(R.drawable.pipe4);
+                if (OptionValue.task.equals(CREATE)) {
+                    holder.imageTile.setImageResource(R.drawable.angel_pipe4);
+                } else if (OptionValue.task.equals(ENTER)) {
+                    holder.imageTile.setImageResource(R.drawable.devil_pipe4);
+                }
                 break;
             case 5:
-                holder.imageTile.setImageResource(R.drawable.pipe5);
+                if (OptionValue.task.equals(CREATE)) {
+                    holder.imageTile.setImageResource(R.drawable.angel_pipe5);
+                } else if (OptionValue.task.equals(ENTER)) {
+                    holder.imageTile.setImageResource(R.drawable.devil_pipe5);
+                }
                 break;
         }
 

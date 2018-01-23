@@ -1,9 +1,13 @@
 package com.choegu.indiegame.pipebattle;
 
 import android.app.Dialog;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -54,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
     private int selectRating;
     private TextView textMainWelcome, textStartTier, textStartRating;
     private Button btnLoginLogout, btnJoin, btnEnterStart, btnRanking;
-    private Dialog searchNormalDialog, searchRankDialog, normalSearchCompleteDialog, rankSearchCompleteDialog, loadingRankingDialog;
+    private Dialog searchNormalDialog, searchRankDialog, normalSearchCompleteDialog, rankSearchCompleteDialog, loadingRankingDialog, loadingStartDialog;
     private RankingAdapter rankingAdapter;
     private List<MemberVO> rankingList;
 
@@ -67,6 +71,28 @@ public class MainActivity extends AppCompatActivity {
     private SelectRatingAllThread selectRatingAllThread;
     private CloseMainSocketThread closeMainSocketThread;
     private Handler handler;
+
+    // BGM
+    private MusicService mService;
+    private boolean isBind= false;
+    ServiceConnection sconn = new ServiceConnection() {
+        @Override //서비스가 실행될 때 호출
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            MusicService.MyBinder myBinder = (MusicService.MyBinder) service;
+            mService = myBinder.getService();
+            isBind = true;
+
+            mService.musicPlay();
+            Log.e("yyj", "main onServiceConnected()");
+        }
+
+        @Override //서비스가 종료될 때 호출
+        public void onServiceDisconnected(ComponentName name) {
+            isBind = false;
+            mService = null;
+            Log.e("yyj", "third onServiceDisconnected()");
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,10 +112,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (loginId.trim().equals("")) { // 로그아웃 상태
             textMainWelcome.setText("로그인 후 이용할 수 있습니다.");
-            btnLoginLogout.setBackgroundResource(R.drawable.login_basic);
+            btnLoginLogout.setBackgroundResource(R.drawable.login_event);
         } else { // 로그인 상태
             textMainWelcome.setText(loginId+"님 환영합니다.");
-            btnLoginLogout.setBackgroundResource(R.drawable.logout_basic);
+            btnLoginLogout.setBackgroundResource(R.drawable.logout_event);
         }
 
         // 로그인 로그아웃
@@ -117,9 +143,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if (loginId.trim().equals("")) { // 로그아웃 상태
-                    showLoginDialog();
+                    showMessageDialog("로그인 후 입장할 수 있습니다.");
                 } else { // 로그인 상태
-                    makeEnterStartDialog().show();
+                    makeLoadingStartDialog().show();
                 }
             }
         });
@@ -152,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
                         receiveMsg = (MemberCodeVO) msg.obj;
                         loginId = receiveMsg.getMemberId();
                         showMessageDialog("로그인에 성공했습니다.");
-                        btnLoginLogout.setBackgroundResource(R.drawable.logout_basic);
+                        btnLoginLogout.setBackgroundResource(R.drawable.logout_event);
                         textMainWelcome.setText(loginId+"님 환영합니다.");
                         break;
                     case 52: // 로그인 실패
@@ -175,8 +201,8 @@ public class MainActivity extends AppCompatActivity {
                             normalSearchCompleteDialog.cancel();
                         }
                         startActivity(normalIntent);
-                        finish();
-
+                        MainActivity.this.finish();
+//                        finish();
                         break;
                     case 62: // 노멀 서치 완료
                         if (searchNormalDialog!=null && searchNormalDialog.isShowing()) {
@@ -217,24 +243,25 @@ public class MainActivity extends AppCompatActivity {
                     case 71: // 레이팅 확인
                         receiveMsg = (MemberCodeVO) msg.obj;
                         selectRating = receiveMsg.getRating();
-                        textStartRating.setText(selectRating+"");
+                        String tmpTier;
 
                         if (selectRating < 1000) {
-                            textStartTier.setText("BRONZE");
+                            tmpTier = "BRONZE";
                         } else if (selectRating < 1100) {
-                            textStartTier.setText("SILVER");
+                            tmpTier = "SILVER";
                         } else if (selectRating < 1200) {
-                            textStartTier.setText("GOLD");
+                            tmpTier = "GOLD";
                         } else if (selectRating < 1300) {
-                            textStartTier.setText("PLATINUM");
+                            tmpTier = "PLATINUM";
                         } else if (selectRating < 1400) {
-                            textStartTier.setText("DIAMOND");
+                            tmpTier = "DIAMOND";
                         } else if (selectRating < 1500) {
-                            textStartTier.setText("MASTER");
+                            tmpTier = "MASTER";
                         } else {
-                            textStartTier.setText("GRAND MASTER");
+                            tmpTier = "GRAND MASTER";
                         }
-
+                        loadingStartDialog.cancel();
+                        makeEnterStartDialog(tmpTier, selectRating).show();
                         break;
                     case 73: // 랭킹 리스트 로드
                         loadingRankingDialog.cancel();
@@ -243,6 +270,56 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
+
+        if(!isBind) {
+            bindService(new Intent(this, MusicService.class), sconn, Context.BIND_AUTO_CREATE);
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        if(isBind) {
+            Log.d("yyj", "play");
+            mService.musicPlay();
+        }
+        super.onStart();
+    }
+
+    boolean foreground;
+    boolean running;
+
+//    @Override
+//    public void onPause()
+//    {
+//        super.onPause();
+//        foreground = MusicHelper.isAppInForeground(this);
+//        Log.d("yyj", "pause music main"+foreground+"/"+isBind);
+//        if(!foreground && isBind)
+//        {
+//
+//        }
+//    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        running = MusicHelper.isAppRunning(this, "com.choegu.indiegame.pipebattle");
+        Log.d("yyj", "stop music main"+running);
+        foreground = MusicHelper.isAppInForeground(this);
+        Log.d("yyj2", "stop music main"+foreground+"/"+isBind);
+        if(!foreground && isBind){
+            mService.musicPause();
+        }
+        if(!running)
+        {
+            unbindService(sconn);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        unbindService(sconn);
+        super.onDestroy();
     }
 
     @Override
@@ -715,7 +792,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         loginId = "";
-                        btnLoginLogout.setBackgroundResource(R.drawable.login_basic);
+                        btnLoginLogout.setBackgroundResource(R.drawable.login_event);
                         textMainWelcome.setText("로그인 후 이용할 수 있습니다.");
                         dialogInterface.cancel();
                         showMessageDialog("로그아웃 되었습니다.");
@@ -724,8 +801,21 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    // Start Loading 다이얼로그
+    private Dialog makeLoadingStartDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        loadingStartDialog = builder.setTitle("Loading...").create();
+        loadingStartDialog.setCancelable(false);
+        loadingStartDialog.setCanceledOnTouchOutside(false);
+
+        selectRatingThread = new SelectRatingThread(loginId);
+        selectRatingThread.start();
+
+        return loadingStartDialog;
+    }
+
     // 게임 스타트 다이얼로그 (상단에 티어 및 레이팅 띄우기)
-    private Dialog makeEnterStartDialog() {
+    private Dialog makeEnterStartDialog(String tier, int rating) {
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.dialog_start);
 
@@ -735,8 +825,8 @@ public class MainActivity extends AppCompatActivity {
         Button btnEnterNormal = dialog.findViewById(R.id.btn_enter_normal);
         Button btnEnterRank = dialog.findViewById(R.id.btn_enter_rank);
 
-        selectRatingThread = new SelectRatingThread(loginId);
-        selectRatingThread.start();
+        textStartTier.setText(tier+"");
+        textStartRating.setText(rating+"");
 
         btnEnterCustom.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -749,7 +839,7 @@ public class MainActivity extends AppCompatActivity {
                     Intent intent = new Intent(MainActivity.this, ListActivity.class);
                     intent.putExtra("loginId", loginId);
                     startActivity(intent);
-                    finish();
+                    MainActivity.this.finish();
                 }
             }
         });

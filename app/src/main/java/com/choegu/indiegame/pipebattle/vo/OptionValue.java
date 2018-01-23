@@ -13,4 +13,5 @@ public class OptionValue {
     public static String dbPort = "3306";
     public static String dbId = "root";
     public static String dbPassword = "sds1501";
+    public static String task = "";
 }
