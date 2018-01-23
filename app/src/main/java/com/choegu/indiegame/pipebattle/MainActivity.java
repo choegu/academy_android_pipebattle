@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
     private int selectRating;
     private TextView textMainWelcome, textStartTier, textStartRating;
     private Button btnLoginLogout, btnJoin, btnEnterStart, btnRanking;
-    private Dialog searchNormalDialog, searchRankDialog, normalSearchCompleteDialog, rankSearchCompleteDialog;
+    private Dialog searchNormalDialog, searchRankDialog, normalSearchCompleteDialog, rankSearchCompleteDialog, loadingRankingDialog;
     private RankingAdapter rankingAdapter;
     private List<MemberVO> rankingList;
 
@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
         btnRanking.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                makeRankingDialog().show();
+                makeLoadingRankingDialog().show();
             }
         });
 
@@ -237,7 +237,8 @@ public class MainActivity extends AppCompatActivity {
 
                         break;
                     case 73: // 랭킹 리스트 로드
-                        rankingAdapter.notifyDataSetChanged();
+                        loadingRankingDialog.cancel();
+                        makeRankingDialog().show();
                         break;
                 }
             }
@@ -862,18 +863,28 @@ public class MainActivity extends AppCompatActivity {
         return dialog;
     }
 
-    // Ranking 다이얼로그 (쓰레드로 불러오는 작업 해야함)
-    private Dialog makeRankingDialog() {
+    // Ranking Loading 다이얼로그
+    private Dialog makeLoadingRankingDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        loadingRankingDialog = builder.setTitle("Loading...").create();
+        loadingRankingDialog.setCancelable(false);
+        loadingRankingDialog.setCanceledOnTouchOutside(false);
         rankingList = new ArrayList<>();
+
+        selectRatingAllThread = new SelectRatingAllThread();
+        selectRatingAllThread.start();
+
+        return loadingRankingDialog;
+    }
+
+    // Ranking 다이얼로그
+    private Dialog makeRankingDialog() {
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.dialog_ranking);
 
         ListView listViewRanking = dialog.findViewById(R.id.list_view_ranking);
         rankingAdapter = new RankingAdapter(this, R.layout.item_ranking, rankingList);
         listViewRanking.setAdapter(rankingAdapter);
-
-        selectRatingAllThread = new SelectRatingAllThread();
-        selectRatingAllThread.start();
 
         return dialog;
     }
