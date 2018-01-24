@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.choegu.indiegame.pipebattle.vo.MemberVO;
@@ -33,7 +34,7 @@ public class RankingAdapter extends ArrayAdapter<MemberVO> {
     class RankingHolder {
         TextView tvRankingNum;
         TextView tvRankingId;
-        TextView tvRankingTier;
+        ImageView imgRankingTier;
         TextView tvRankingRating;
     }
 
@@ -50,7 +51,7 @@ public class RankingAdapter extends ArrayAdapter<MemberVO> {
 
             holder.tvRankingNum = convertView.findViewById(R.id.text_ranking_num);
             holder.tvRankingId = convertView.findViewById(R.id.text_ranking_id);
-            holder.tvRankingTier = convertView.findViewById(R.id.text_ranking_tier);
+            holder.imgRankingTier = convertView.findViewById(R.id.img_ranking_tier);
             holder.tvRankingRating = convertView.findViewById(R.id.text_ranking_rating);
 
             convertView.setTag(holder);
@@ -63,7 +64,22 @@ public class RankingAdapter extends ArrayAdapter<MemberVO> {
         holder.tvRankingNum.setText(member.getMemberNum()+"");
         holder.tvRankingId.setText(member.getMemberId()+"");
         holder.tvRankingRating.setText(member.getRating()+"");
-        holder.tvRankingTier.setText(member.getTier()+"");
+
+        if (member.getRating() < 1000) {
+            holder.imgRankingTier.setImageResource(R.drawable.icon_bronze);
+        } else if (member.getRating() < 1100) {
+            holder.imgRankingTier.setImageResource(R.drawable.icon_silver);
+        } else if (member.getRating() < 1200) {
+            holder.imgRankingTier.setImageResource(R.drawable.icon_gold);
+        } else if (member.getRating() < 1300) {
+            holder.imgRankingTier.setImageResource(R.drawable.icon_platinum);
+        } else if (member.getRating() < 1400) {
+            holder.imgRankingTier.setImageResource(R.drawable.icon_diamond);
+        } else if (member.getRating() < 1500) {
+            holder.imgRankingTier.setImageResource(R.drawable.icon_master);
+        } else {
+            holder.imgRankingTier.setImageResource(R.drawable.icon_grand_master);
+        }
 
         return convertView;
     }

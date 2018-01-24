@@ -6,6 +6,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -14,8 +18,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -56,7 +62,8 @@ public class MainActivity extends AppCompatActivity {
     // Layout
     private String loginId = "";
     private int selectRating;
-    private TextView textMainWelcome, textStartTier, textStartRating;
+    private TextView textMainWelcome, textStartRating;
+    private ImageView imgStartTier;
     private Button btnLoginLogout, btnJoin, btnEnterStart, btnRanking;
     private Dialog searchNormalDialog, searchRankDialog, normalSearchCompleteDialog, rankSearchCompleteDialog, loadingRankingDialog, loadingStartDialog;
     private RankingAdapter rankingAdapter;
@@ -73,6 +80,8 @@ public class MainActivity extends AppCompatActivity {
     private Handler handler;
 
     // BGM
+    private SoundPool sound;
+    private int clickSoundId;
     private MusicService mService;
     private boolean isBind= false;
     ServiceConnection sconn = new ServiceConnection() {
@@ -105,6 +114,9 @@ public class MainActivity extends AppCompatActivity {
         btnEnterStart = findViewById(R.id.btn_enter_start);
         btnRanking = findViewById(R.id.btn_ranking);
 
+        sound = new SoundPool(1, AudioManager.STREAM_ALARM, 0);// maxStreams, streamType, srcQuality
+        clickSoundId = sound.load(this, R.raw.click_button,1);
+
         Intent receiveIntent = getIntent();
         if (receiveIntent.getStringExtra("loginId")!=null) {
             loginId = receiveIntent.getStringExtra("loginId");
@@ -122,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
         btnLoginLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+//                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 if (loginId.trim().equals("")) { // 로그아웃 상태
                     showLoginDialog();
                 } else { // 로그인 상태
@@ -134,6 +147,7 @@ public class MainActivity extends AppCompatActivity {
         btnJoin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+//                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 showJoinDialog();
             }
         });
@@ -142,6 +156,7 @@ public class MainActivity extends AppCompatActivity {
         btnEnterStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+//                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 if (loginId.trim().equals("")) { // 로그아웃 상태
                     showMessageDialog("로그인 후 입장할 수 있습니다.");
                 } else { // 로그인 상태
@@ -154,6 +169,12 @@ public class MainActivity extends AppCompatActivity {
         btnRanking.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                AudioManager mgr = (AudioManager) MainActivity.this.getSystemService(Context.AUDIO_SERVICE);
+
+                int streamVolume = mgr.getStreamVolume(AudioManager.STREAM_MUSIC);
+                streamVolume = streamVolume / mgr.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+
+                sound.play(clickSoundId, (mgr.getStreamVolume(AudioManager.STREAM_MUSIC)/(float)mgr.getStreamVolume(AudioManager.STREAM_MUSIC)),(mgr.getStreamVolume(AudioManager.STREAM_MUSIC)/(float)mgr.getStreamVolume(AudioManager.STREAM_MUSIC)),  1,  0,  1.0F);
                 makeLoadingRankingDialog().show();
             }
         });
@@ -243,25 +264,8 @@ public class MainActivity extends AppCompatActivity {
                     case 71: // 레이팅 확인
                         receiveMsg = (MemberCodeVO) msg.obj;
                         selectRating = receiveMsg.getRating();
-                        String tmpTier;
-
-                        if (selectRating < 1000) {
-                            tmpTier = "BRONZE";
-                        } else if (selectRating < 1100) {
-                            tmpTier = "SILVER";
-                        } else if (selectRating < 1200) {
-                            tmpTier = "GOLD";
-                        } else if (selectRating < 1300) {
-                            tmpTier = "PLATINUM";
-                        } else if (selectRating < 1400) {
-                            tmpTier = "DIAMOND";
-                        } else if (selectRating < 1500) {
-                            tmpTier = "MASTER";
-                        } else {
-                            tmpTier = "GRAND MASTER";
-                        }
                         loadingStartDialog.cancel();
-                        makeEnterStartDialog(tmpTier, selectRating).show();
+                        makeEnterStartDialog(selectRating).show();
                         break;
                     case 73: // 랭킹 리스트 로드
                         loadingRankingDialog.cancel();
@@ -288,25 +292,30 @@ public class MainActivity extends AppCompatActivity {
     boolean foreground;
     boolean running;
 
-//    @Override
-//    public void onPause()
-//    {
-//        super.onPause();
-//        foreground = MusicHelper.isAppInForeground(this);
-//        Log.d("yyj", "pause music main"+foreground+"/"+isBind);
-//        if(!foreground && isBind)
-//        {
-//
-//        }
-//    }
+    @Override
+    public void onPause()
+    {
+        super.onPause();
+
+        foreground = MusicHelper.isAppInForeground(this);
+        Log.d("yyj2", "pause music main"+foreground+"/"+isBind);
+        if(!foreground && isBind){
+            mService.musicPause();
+        }
+    }
 
     @Override
     protected void onStop() {
         super.onStop();
+
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Log.d("yyj","onstop");
         running = MusicHelper.isAppRunning(this, "com.choegu.indiegame.pipebattle");
-        Log.d("yyj", "stop music main"+running);
         foreground = MusicHelper.isAppInForeground(this);
-        Log.d("yyj2", "stop music main"+foreground+"/"+isBind);
         if(!foreground && isBind){
             mService.musicPause();
         }
@@ -483,21 +492,6 @@ public class MainActivity extends AppCompatActivity {
                 for (MemberVO list: rankingList) {
                     rankNum++;
                     list.setMemberNum(rankNum);
-                    if (list.getRating() < 1000) {
-                        list.setTier("BRONZE");
-                    } else if (list.getRating() < 1100) {
-                        list.setTier("SILVER");
-                    } else if (list.getRating() < 1200) {
-                        list.setTier("GOLD");
-                    } else if (list.getRating() < 1300) {
-                        list.setTier("PLATINUM");
-                    } else if (list.getRating() < 1400) {
-                        list.setTier("DIAMOND");
-                    } else if (list.getRating() < 1500) {
-                        list.setTier("MASTER");
-                    } else {
-                        list.setTier("GRAND MASTER");
-                    }
                     Log.i("chsr", list.toString());
                 }
 
@@ -815,22 +809,39 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // 게임 스타트 다이얼로그 (상단에 티어 및 레이팅 띄우기)
-    private Dialog makeEnterStartDialog(String tier, int rating) {
+    private Dialog makeEnterStartDialog(int rating) {
         final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_start);
 
-        textStartTier = dialog.findViewById(R.id.text_start_tier);
+        imgStartTier = dialog.findViewById(R.id.img_start_tier);
         textStartRating = dialog.findViewById(R.id.text_start_rating);
         Button btnEnterCustom = dialog.findViewById(R.id.btn_enter_custom);
         Button btnEnterNormal = dialog.findViewById(R.id.btn_enter_normal);
         Button btnEnterRank = dialog.findViewById(R.id.btn_enter_rank);
 
-        textStartTier.setText(tier+"");
         textStartRating.setText(rating+"");
+
+        if (rating < 1000) {
+            imgStartTier.setImageResource(R.drawable.icon_bronze);
+        } else if (rating < 1100) {
+            imgStartTier.setImageResource(R.drawable.icon_silver);
+        } else if (rating < 1200) {
+            imgStartTier.setImageResource(R.drawable.icon_gold);
+        } else if (rating < 1300) {
+            imgStartTier.setImageResource(R.drawable.icon_platinum);
+        } else if (rating < 1400) {
+            imgStartTier.setImageResource(R.drawable.icon_diamond);
+        } else if (rating < 1500) {
+            imgStartTier.setImageResource(R.drawable.icon_master);
+        } else {
+            imgStartTier.setImageResource(R.drawable.icon_grand_master);
+        }
 
         btnEnterCustom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+//                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 dialog.cancel();
 
                 if (loginId.trim().equals("")) { // 로그인 후 이용 가능 메세지
@@ -847,6 +858,7 @@ public class MainActivity extends AppCompatActivity {
         btnEnterNormal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+//                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 dialog.cancel();
 
                 if (loginId.trim().equals("")) { // 로그인 후 이용 가능 메세지
@@ -861,6 +873,7 @@ public class MainActivity extends AppCompatActivity {
         btnEnterRank.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+//                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 dialog.cancel();
 
                 if (loginId.trim().equals("")) { // 로그인 후 이용 가능 메세지
@@ -970,11 +983,14 @@ public class MainActivity extends AppCompatActivity {
     // Ranking 다이얼로그
     private Dialog makeRankingDialog() {
         final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_ranking);
 
         ListView listViewRanking = dialog.findViewById(R.id.list_view_ranking);
         rankingAdapter = new RankingAdapter(this, R.layout.item_ranking, rankingList);
         listViewRanking.setAdapter(rankingAdapter);
+
+        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.BLACK));
 
         return dialog;
     }

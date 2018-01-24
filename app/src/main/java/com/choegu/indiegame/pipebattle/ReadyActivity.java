@@ -1,17 +1,22 @@
 package com.choegu.indiegame.pipebattle;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.annotation.Nullable;
+import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -64,6 +69,7 @@ public class ReadyActivity extends AppCompatActivity {
     private Socket socket;
 
     // Layout
+    private ConstraintLayout activityReadyRoot;
     private Button btnReadyStart, btnReadySend, btnPlayer1, btnPlayer2;
     private TextView textReadyChat, textPlayer1Rating, textPlayer2Rating;
     private EditText editReadymsg;
@@ -104,6 +110,7 @@ public class ReadyActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ready);
 
+        activityReadyRoot = findViewById(R.id.activity_ready_root);
         btnReadyStart = findViewById(R.id.btn_ready_start);
         btnReadySend = findViewById(R.id.btn_ready_send);
         btnPlayer1 = findViewById(R.id.btn_player1);
@@ -122,7 +129,7 @@ public class ReadyActivity extends AppCompatActivity {
 
         if (mode.equals(CUSTOM)) {
             if (task.equals(CREATE)) {
-                btnReadyStart.setText("START");
+                btnReadyStart.setBackgroundResource(R.drawable.room_start_basic);
                 btnPlayer1.setText(loginId);
                 btnPlayer1.setBackgroundColor(Color.YELLOW);
                 btnPlayer2.setText(EMPTY);
@@ -133,7 +140,7 @@ public class ReadyActivity extends AppCompatActivity {
             }
         } else if (mode.equals(NORMAL)) {
             if (task.equals(CREATE)) {
-                btnReadyStart.setText("START");
+                btnReadyStart.setBackgroundResource(R.drawable.room_start_basic);
             }
             player1 = receiveIntent.getStringExtra("player1");
             player2 = receiveIntent.getStringExtra("player2");
@@ -143,7 +150,7 @@ public class ReadyActivity extends AppCompatActivity {
             btnPlayer2.setBackgroundColor(Color.YELLOW);
         } else {
             if (task.equals(CREATE)) {
-                btnReadyStart.setText("START");
+                btnReadyStart.setBackgroundResource(R.drawable.room_start_basic);
             }
             player1 = receiveIntent.getStringExtra("player1");
             player2 = receiveIntent.getStringExtra("player2");
@@ -156,8 +163,6 @@ public class ReadyActivity extends AppCompatActivity {
             textPlayer1Rating.setText(ratingP1+"");
             textPlayer2Rating.setText(ratingP2+"");
         }
-
-        btnReadyStart.setBackgroundColor(Color.GRAY);
 
         btnReadyStart.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -268,7 +273,12 @@ public class ReadyActivity extends AppCompatActivity {
                         unbindService(sconn); // BGM 종료
                         break;
                     case 143: // ready 완료
-                        btnReadyStart.setBackgroundColor(Color.GREEN);
+                        if (task.equals(CREATE)) {
+                            btnReadyStart.setBackgroundResource(R.drawable.room_start_push);
+                        } else if (task.equals(ENTER)) {
+                            btnReadyStart.setBackgroundResource(R.drawable.room_ready_push);
+                        }
+
                         playerReady = true;
                         break;
                     case 144: // 이미 ready 누름
@@ -288,7 +298,7 @@ public class ReadyActivity extends AppCompatActivity {
 
                             btnPlayer2.setText(EMPTY);
                             btnPlayer2.setBackgroundColor(Color.GRAY);
-                            btnReadyStart.setBackgroundColor(Color.GRAY);
+                            btnReadyStart.setBackgroundResource(R.drawable.room_start_basic);
                             playerReady = false;
                         } else if (task.equals(ENTER) && mode.equals(CUSTOM)) {
                             readyRoomThread.interrupt();
@@ -306,7 +316,7 @@ public class ReadyActivity extends AppCompatActivity {
                         if (task.equals(CREATE)) {
                             btnPlayer2.setText(EMPTY);
                             btnPlayer2.setBackgroundColor(Color.GRAY);
-                            btnReadyStart.setBackgroundColor(Color.GRAY);
+                            btnReadyStart.setBackgroundResource(R.drawable.room_start_basic);
                             playerReady = false;
                         }
                         break;
@@ -384,6 +394,12 @@ public class ReadyActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        activityReadyRoot.setBackgroundDrawable(null);
+        super.onDestroy();
     }
 
     // 준비 완료, 게임 시작 전송 쓰레드

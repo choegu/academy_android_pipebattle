@@ -3,9 +3,15 @@ package com.choegu.indiegame.pipebattle;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -15,12 +21,16 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.transition.Transition;
 import com.choegu.indiegame.pipebattle.vo.FinishCheckVO;
 import com.choegu.indiegame.pipebattle.vo.GameCodeVO;
 import com.choegu.indiegame.pipebattle.vo.MemberCodeVO;
@@ -137,11 +147,46 @@ public class GameActivity extends AppCompatActivity {
         gridViewNext = findViewById(R.id.gridView_next_tile);
 
         if (OptionValue.task.equals(CREATE)) { // devil
-            rootActivity.setBackgroundResource(R.drawable.devil_back);
-            gridViewEnemy.setBackgroundResource(R.drawable.devil_small);
+            Glide.with(this).load(R.drawable.devil_back).into(new SimpleTarget<Drawable>() {
+                @Override
+                public void onResourceReady(Drawable resource, Transition<? super Drawable> transition) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                        rootActivity.setBackground(resource);
+                    }
+                }
+            });
+
+            Glide.with(this).load(R.drawable.devil_small).into(new SimpleTarget<Drawable>() {
+                @Override
+                public void onResourceReady(Drawable resource, Transition<? super Drawable> transition) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                        gridViewEnemy.setBackground(resource);
+                    }
+                }
+            });
+
+
+//            rootActivity.setBackgroundResource(R.drawable.devil_back);
+//            gridViewEnemy.setBackgroundResource(R.drawable.devil_small);
         } else if (OptionValue.task.equals(ENTER)) { // angel
-            rootActivity.setBackgroundResource(R.drawable.angel_back);
-            gridViewEnemy.setBackgroundResource(R.drawable.angel_small);
+            Glide.with(this).load(R.drawable.angel_back).into(new SimpleTarget<Drawable>() {
+                @Override
+                public void onResourceReady(Drawable resource, Transition<? super Drawable> transition) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                        rootActivity.setBackground(resource);
+                    }
+                }
+            });
+            Glide.with(this).load(R.drawable.angel_small).into(new SimpleTarget<Drawable>() {
+                @Override
+                public void onResourceReady(Drawable resource, Transition<? super Drawable> transition) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                        gridViewEnemy.setBackground(resource);
+                    }
+                }
+            });
+//            rootActivity.setBackgroundResource(R.drawable.angel_back);
+//            gridViewEnemy.setBackgroundResource(R.drawable.angel_small);
         }
 
         textGamePlayer1.setText(player1);
@@ -776,6 +821,7 @@ public class GameActivity extends AppCompatActivity {
     // finish game 다이얼로그, 누군가 포기해서 종료되는 것 포함
     private Dialog makeFinishDialog(boolean winLose) {
         final Dialog finishDialog = new Dialog(this);
+        finishDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         finishDialog.setContentView(R.layout.dialog_finish);
 
         TextView textFinishResult = finishDialog.findViewById(R.id.finish_text_result);
@@ -1084,4 +1130,5 @@ public class GameActivity extends AppCompatActivity {
         finishCheck.setDirectionError();
         return finishCheck;
     }
+
 }

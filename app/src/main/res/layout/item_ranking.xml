@@ -5,43 +5,45 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:text="1"
         android:textSize="20sp"
-        android:layout_margin="10dp"
+        android:textColor="#ffffff"
+        android:gravity="center"
         android:id="@+id/text_ranking_num"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"/>
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="140dp"
+        android:layout_height="40dp"
         android:text="ID"
         android:textSize="20sp"
-        android:layout_margin="10dp"
+        android:textColor="#ffffff"
+        android:gravity="center"
         android:id="@+id/text_ranking_id"
+        android:maxLines="1"
+        android:minLines="1"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toRightOf="@id/text_ranking_num"/>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="TIER"
-        android:textSize="20sp"
-        android:layout_margin="10dp"
-        android:id="@+id/text_ranking_tier"
+    <ImageView
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:id="@+id/img_ranking_tier"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toRightOf="@id/text_ranking_id"/>
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="100dp"
+        android:layout_height="40dp"
         android:text="RATING"
         android:textSize="20sp"
-        android:layout_margin="10dp"
+        android:textColor="#ffffff"
+        android:gravity="center"
         android:id="@+id/text_ranking_rating"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toRightOf="@id/text_ranking_tier"/>
+        app:layout_constraintLeft_toRightOf="@id/img_ranking_tier"/>
 
 </android.support.constraint.ConstraintLayout>
