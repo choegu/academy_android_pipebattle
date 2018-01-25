@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -36,7 +38,7 @@ import java.util.List;
  * Created by student on 2018-01-10.
  */
 
-public class ListActivity extends AppCompatActivity {
+public class ListActivity extends MusicActivity {
     // 네트워크 task
     private final String CREATE_ROOM = "createRoom";
     private final String REFRESH_ROOM = "refreshRoom";
@@ -61,25 +63,8 @@ public class ListActivity extends AppCompatActivity {
     private Handler handler;
 
     // BGM
-    private MusicService mService;
-    private boolean isBind= false;
-
-    ServiceConnection sconn = new ServiceConnection() {
-        @Override //서비스가 실행될 때 호출
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            MusicService.MyBinder myBinder = (MusicService.MyBinder) service;
-            mService = myBinder.getService();
-            isBind = true;
-            Log.e("yyj", "second onServiceConnected()");
-        }
-
-        @Override //서비스가 종료될 때 호출
-        public void onServiceDisconnected(ComponentName name) {
-            isBind = false;
-            mService = null;
-            Log.e("yyj", "second onServiceDisconnected()");
-        }
-    };
+    private SoundPool sound;
+    private int clickSoundId;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -89,6 +74,9 @@ public class ListActivity extends AppCompatActivity {
         btnCreate = findViewById(R.id.btn_create);
         btnRefresh = findViewById(R.id.btn_refresh);
         listViewRoom = findViewById(R.id.listview_room);
+
+        sound = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);// maxStreams, streamType, srcQuality
+        clickSoundId = sound.load(this, R.raw.click_button,1);
 
         Intent receiveIntent = getIntent();
         loginId = receiveIntent.getStringExtra("loginId");
@@ -106,6 +94,7 @@ public class ListActivity extends AppCompatActivity {
         btnCreate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 showCreateDialog();
             }
         });
@@ -114,6 +103,7 @@ public class ListActivity extends AppCompatActivity {
         listViewRoom.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 if (roomVOList.get(i).getPlayerNum()<2) {
                     Intent intent = new Intent(ListActivity.this, ReadyActivity.class);
                     intent.putExtra("portNum", roomVOList.get(i).getPortNum());
@@ -134,6 +124,7 @@ public class ListActivity extends AppCompatActivity {
         btnRefresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 refresh = new RefreshRoomThread();
                 refresh.start();
             }
@@ -178,57 +169,8 @@ public class ListActivity extends AppCompatActivity {
                 }
             }
         };
-
-        if(!isBind) {
-            bindService(new Intent(this, MusicService.class), sconn, Context.BIND_AUTO_CREATE);
-        }
     }
 
-    @Override
-    protected void onStart() {
-        if(isBind) {
-            Log.d("yyj", "play");
-            mService.musicPlay();
-        }
-
-        super.onStart();
-    }
-
-    boolean foreground;
-    boolean running;
-
-//    @Override
-//    public void onPause()
-//    {
-//        foreground = MusicHelper.isAppInForeground(this);
-//        if(!foreground)
-//        {
-//            mService.musicPause();
-//        }
-//        super.onPause();
-//    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        running = MusicHelper.isAppRunning(this, "com.choegu.indiegame.pipebattle");
-        Log.d("yyj", "stop music main"+running);
-        foreground = MusicHelper.isAppInForeground(this);
-        Log.d("yyj2", "stop music main"+foreground+"/"+isBind);
-        if(!foreground && isBind){
-            mService.musicPause();
-        }
-        if(!running)
-        {
-            unbindService(sconn);
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        unbindService(sconn);
-        super.onDestroy();
-    }
 
     @Override
     public void onBackPressed() {

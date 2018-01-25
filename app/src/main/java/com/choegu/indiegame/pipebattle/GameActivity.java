@@ -10,7 +10,9 @@ import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.SoundPool;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -25,6 +27,7 @@ import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.GridView;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -86,7 +89,7 @@ public class GameActivity extends AppCompatActivity {
     private AttackGameAdapter attackGameAdapter;
     private NextGameAdapter nextGameAdapter;
     private Dialog currentDialog, loadingDialog;
-    private TextView textLoading, textGamePlayer1, textGamePlayer2;
+    private TextView textLoading, textGamePlayer1, textGamePlayer2, textGameVs;
 
     // 쓰레드
     private GameStartThread gameStartThread;
@@ -115,6 +118,8 @@ public class GameActivity extends AppCompatActivity {
     private List<Integer> moveToNorthImpossibleList;
 
     // BGM
+    private SoundPool sound;
+    private int clickSoundAttack, clickSoundTile;
     private MediaPlayer bgmPlayer;
 
     @Override
@@ -141,12 +146,18 @@ public class GameActivity extends AppCompatActivity {
         rootActivity = findViewById(R.id.activity_game_root);
         textGamePlayer1 = findViewById(R.id.text_game_player1);
         textGamePlayer2 = findViewById(R.id.text_game_player2);
+        textGameVs = findViewById(R.id.text_game_vs);
         gridViewMain = findViewById(R.id.gridView_main_game);
         gridViewEnemy = findViewById(R.id.gridView_enemy_game);
         gridViewAttack = findViewById(R.id.gridView_attack_item);
         gridViewNext = findViewById(R.id.gridView_next_tile);
 
-        if (OptionValue.task.equals(CREATE)) { // devil
+        sound = new SoundPool(2, AudioManager.STREAM_MUSIC, 0);// maxStreams, streamType, srcQuality
+        clickSoundAttack = sound.load(this, R.raw.click_attack,1);
+        clickSoundTile = sound.load(this, R.raw.click_tile,2);
+
+        // 배경이미지 및 글씨 색
+        if (OptionValue.task.equals(CREATE)) { // devil back (player:angel)
             Glide.with(this).load(R.drawable.devil_back).into(new SimpleTarget<Drawable>() {
                 @Override
                 public void onResourceReady(Drawable resource, Transition<? super Drawable> transition) {
@@ -164,8 +175,9 @@ public class GameActivity extends AppCompatActivity {
                     }
                 }
             });
-
-
+            textGamePlayer1.setTextColor(Color.WHITE);
+            textGamePlayer2.setTextColor(Color.WHITE);
+            textGameVs.setTextColor(Color.WHITE);
 //            rootActivity.setBackgroundResource(R.drawable.devil_back);
 //            gridViewEnemy.setBackgroundResource(R.drawable.devil_small);
         } else if (OptionValue.task.equals(ENTER)) { // angel
@@ -185,6 +197,7 @@ public class GameActivity extends AppCompatActivity {
                     }
                 }
             });
+
 //            rootActivity.setBackgroundResource(R.drawable.angel_back);
 //            gridViewEnemy.setBackgroundResource(R.drawable.angel_small);
         }
@@ -255,6 +268,8 @@ public class GameActivity extends AppCompatActivity {
         gridViewMain.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                sound.play(clickSoundTile, 1.0F, 1.0F,  2,  0,  1.0F);
+
                 if (i!=0 && i!=48 && tileVOListMain.get(i).getType()!=EXPLOSION) {
                     int tileTypeNow = tileVOListNext.get(0).getType();
 
@@ -300,6 +315,7 @@ public class GameActivity extends AppCompatActivity {
         gridViewAttack.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                sound.play(clickSoundTile, 1.0F, 1.0F,  2,  0,  1.0F);
                 if (tileVOListAttack.get(i).getType() == MISSILE) {
                     currentDialog = makeAttackDialog(i);
                     currentDialog.show();
@@ -344,6 +360,7 @@ public class GameActivity extends AppCompatActivity {
                         receiveMsg = (GameCodeVO) msg.obj;
                         tileVOListMain.get(receiveMsg.getTileNum()).setType(EXPLOSION);
                         mainGameAdapter.notifyDataSetChanged();
+                        sound.play(clickSoundAttack, 1.0F, 1.0F,  1,  0,  1.0F);
                         break;
                     case 166: // P1 나감
                         if (task.equals(CREATE)) {
@@ -798,6 +815,7 @@ public class GameActivity extends AppCompatActivity {
         gridViewAttackDialog.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                sound.play(clickSoundAttack, 1.0F, 1.0F,  1,  0,  1.0F);
                 if (!missileImpossibleList.contains(i)) {
                     ClickAttackEnemyThread clickAttackEnemyThread = new ClickAttackEnemyThread(i);
                     clickAttackEnemyThread.start();
@@ -824,6 +842,7 @@ public class GameActivity extends AppCompatActivity {
         finishDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         finishDialog.setContentView(R.layout.dialog_finish);
 
+        ImageView imgFinishResult = finishDialog.findViewById(R.id.finish_img_result);
         TextView textFinishResult = finishDialog.findViewById(R.id.finish_text_result);
         Button btnFinishOk = finishDialog.findViewById(R.id.finish_btn_ok);
 
@@ -844,6 +863,7 @@ public class GameActivity extends AppCompatActivity {
             } else {
                 textFinishResult.setText("승리하였습니다.");
             }
+            imgFinishResult.setImageResource(R.drawable.victory);
         } else {
             if (mode.equals(RANK)) {
                 if (loginId.equals(player1)) { // 클라이언트가 P1이면
@@ -856,6 +876,7 @@ public class GameActivity extends AppCompatActivity {
             } else {
                 textFinishResult.setText("패배하였습니다.");
             }
+            imgFinishResult.setImageResource(R.drawable.defeat);
         }
         btnFinishOk.setOnClickListener(new View.OnClickListener() {
             @Override

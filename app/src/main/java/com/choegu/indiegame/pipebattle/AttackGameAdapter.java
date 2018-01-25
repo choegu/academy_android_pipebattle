@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 
+import com.choegu.indiegame.pipebattle.vo.OptionValue;
 import com.choegu.indiegame.pipebattle.vo.TileVO;
 
 import java.util.List;
@@ -22,6 +23,10 @@ public class AttackGameAdapter extends ArrayAdapter <TileVO>{
     private Activity context;
     private int layout;
     private List<TileVO> tileVOList;
+
+    // 방 입장 task
+    private final String CREATE = "create";
+    private final String ENTER = "enter";
 
     // 게임 로직
     private final int MISSILE = 11;
@@ -63,7 +68,12 @@ public class AttackGameAdapter extends ArrayAdapter <TileVO>{
                 holder.imageTile.setImageResource(0);
                 break;
             case MISSILE:
-                holder.imageTile.setImageResource(R.drawable.missile);
+//                holder.imageTile.setImageResource(R.drawable.missile);
+                if (OptionValue.task.equals(CREATE)) {
+                    holder.imageTile.setImageResource(R.drawable.angel_attack);
+                } else if (OptionValue.task.equals(ENTER)) {
+                    holder.imageTile.setImageResource(R.drawable.devil_attack);
+                }
                 break;
         }
 

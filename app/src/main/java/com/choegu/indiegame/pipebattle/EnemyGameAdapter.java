@@ -124,7 +124,12 @@ public class EnemyGameAdapter extends ArrayAdapter<TileVO>{
                 }
                 break;
             case EXPLOSION:
-                holder.imageTile.setImageResource(R.drawable.explosion);
+//                holder.imageTile.setImageResource(R.drawable.explosion);
+                if (OptionValue.task.equals(CREATE)) {
+                    holder.imageTile.setImageResource(R.drawable.angel_attack);
+                } else if (OptionValue.task.equals(ENTER)) {
+                    holder.imageTile.setImageResource(R.drawable.devil_attack);
+                }
                 break;
         }
 

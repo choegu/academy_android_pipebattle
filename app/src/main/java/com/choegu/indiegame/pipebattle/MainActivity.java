@@ -40,7 +40,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends MusicActivity {
     // 네트워크 코드
     private final String MEMBER_LOGIN_CHECK = "memberLoginCheck";
     private final String MEMBER_JOIN = "memberJoin";
@@ -82,26 +82,7 @@ public class MainActivity extends AppCompatActivity {
     // BGM
     private SoundPool sound;
     private int clickSoundId;
-    private MusicService mService;
-    private boolean isBind= false;
-    ServiceConnection sconn = new ServiceConnection() {
-        @Override //서비스가 실행될 때 호출
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            MusicService.MyBinder myBinder = (MusicService.MyBinder) service;
-            mService = myBinder.getService();
-            isBind = true;
 
-            mService.musicPlay();
-            Log.e("yyj", "main onServiceConnected()");
-        }
-
-        @Override //서비스가 종료될 때 호출
-        public void onServiceDisconnected(ComponentName name) {
-            isBind = false;
-            mService = null;
-            Log.e("yyj", "third onServiceDisconnected()");
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
         btnEnterStart = findViewById(R.id.btn_enter_start);
         btnRanking = findViewById(R.id.btn_ranking);
 
-        sound = new SoundPool(1, AudioManager.STREAM_ALARM, 0);// maxStreams, streamType, srcQuality
+        sound = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);// maxStreams, streamType, srcQuality
         clickSoundId = sound.load(this, R.raw.click_button,1);
 
         Intent receiveIntent = getIntent();
@@ -134,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
         btnLoginLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
+                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 if (loginId.trim().equals("")) { // 로그아웃 상태
                     showLoginDialog();
                 } else { // 로그인 상태
@@ -147,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
         btnJoin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
+                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 showJoinDialog();
             }
         });
@@ -156,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
         btnEnterStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
+                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 if (loginId.trim().equals("")) { // 로그아웃 상태
                     showMessageDialog("로그인 후 입장할 수 있습니다.");
                 } else { // 로그인 상태
@@ -171,10 +152,8 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 AudioManager mgr = (AudioManager) MainActivity.this.getSystemService(Context.AUDIO_SERVICE);
 
-                int streamVolume = mgr.getStreamVolume(AudioManager.STREAM_MUSIC);
-                streamVolume = streamVolume / mgr.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
 
-                sound.play(clickSoundId, (mgr.getStreamVolume(AudioManager.STREAM_MUSIC)/(float)mgr.getStreamVolume(AudioManager.STREAM_MUSIC)),(mgr.getStreamVolume(AudioManager.STREAM_MUSIC)/(float)mgr.getStreamVolume(AudioManager.STREAM_MUSIC)),  1,  0,  1.0F);
                 makeLoadingRankingDialog().show();
             }
         });
@@ -275,61 +254,13 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        if(!isBind) {
-            bindService(new Intent(this, MusicService.class), sconn, Context.BIND_AUTO_CREATE);
-        }
+
     }
 
-    @Override
-    protected void onStart() {
-        if(isBind) {
-            Log.d("yyj", "play");
-            mService.musicPlay();
-        }
-        super.onStart();
-    }
 
-    boolean foreground;
-    boolean running;
 
-    @Override
-    public void onPause()
-    {
-        super.onPause();
 
-        foreground = MusicHelper.isAppInForeground(this);
-        Log.d("yyj2", "pause music main"+foreground+"/"+isBind);
-        if(!foreground && isBind){
-            mService.musicPause();
-        }
-    }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        Log.d("yyj","onstop");
-        running = MusicHelper.isAppRunning(this, "com.choegu.indiegame.pipebattle");
-        foreground = MusicHelper.isAppInForeground(this);
-        if(!foreground && isBind){
-            mService.musicPause();
-        }
-        if(!running)
-        {
-            unbindService(sconn);
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        unbindService(sconn);
-        super.onDestroy();
-    }
 
     @Override
     public void onBackPressed() {
@@ -841,7 +772,7 @@ public class MainActivity extends AppCompatActivity {
         btnEnterCustom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
+                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 dialog.cancel();
 
                 if (loginId.trim().equals("")) { // 로그인 후 이용 가능 메세지
@@ -858,7 +789,7 @@ public class MainActivity extends AppCompatActivity {
         btnEnterNormal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
+                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 dialog.cancel();
 
                 if (loginId.trim().equals("")) { // 로그인 후 이용 가능 메세지
@@ -873,7 +804,7 @@ public class MainActivity extends AppCompatActivity {
         btnEnterRank.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
+                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 dialog.cancel();
 
                 if (loginId.trim().equals("")) { // 로그인 후 이용 가능 메세지

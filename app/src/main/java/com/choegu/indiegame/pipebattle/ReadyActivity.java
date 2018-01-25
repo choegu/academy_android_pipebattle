@@ -11,6 +11,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -41,7 +43,7 @@ import java.net.Socket;
  * Created by student on 2018-01-10.
  */
 
-public class ReadyActivity extends AppCompatActivity {
+public class ReadyActivity extends MusicActivity{
     // 네크워크 코드
     private final String GAME_START_READY = "gameStartReady";
     private final String CHAT_READY = "chatReady";
@@ -85,25 +87,8 @@ public class ReadyActivity extends AppCompatActivity {
     private Handler handler;
 
     // BGM
-    private MusicService mService;
-    private boolean isBind= false;
-
-    ServiceConnection sconn = new ServiceConnection() {
-        @Override //서비스가 실행될 때 호출
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            MusicService.MyBinder myBinder = (MusicService.MyBinder) service;
-            mService = myBinder.getService();
-            isBind = true;
-            Log.e("yyj", "third onServiceConnected()");
-        }
-
-        @Override //서비스가 종료될 때 호출
-        public void onServiceDisconnected(ComponentName name) {
-            isBind = false;
-            mService = null;
-            Log.e("yyj", "third onServiceDisconnected()");
-        }
-    };
+    private SoundPool sound;
+    private int clickSoundId;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -120,6 +105,9 @@ public class ReadyActivity extends AppCompatActivity {
         textReadyChat = findViewById(R.id.text_ready_chat);
         editReadymsg = findViewById(R.id.edit_ready_msg);
         imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+
+        sound = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);// maxStreams, streamType, srcQuality
+        clickSoundId = sound.load(this, R.raw.click_button,1);
 
         Intent receiveIntent = getIntent();
         portNum = receiveIntent.getIntExtra("portNum", 0);
@@ -167,6 +155,7 @@ public class ReadyActivity extends AppCompatActivity {
         btnReadyStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 readyStartThread = new ReadyStartThread();
                 readyStartThread.start();
             }
@@ -175,6 +164,7 @@ public class ReadyActivity extends AppCompatActivity {
         btnReadySend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
                 ReadyCodeVO codeVO = new ReadyCodeVO();
                 codeVO.setCode(CHAT_READY);
                 codeVO.setMessage(loginId + " : " + editReadymsg.getText());
@@ -263,14 +253,19 @@ public class ReadyActivity extends AppCompatActivity {
                         } else if (mode.equals(CUSTOM)) {
                             intent.putExtra("mode", CUSTOM);
                         }
-
+                        stopMusic();
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                         startActivity(intent);
                         finish();
 
                         readyCloseThread = new ReadyCloseThread();
                         readyCloseThread.start();
-
-                        unbindService(sconn); // BGM 종료
+//////////////////////////////////////////////////////// music change
+//                        unbindService(sconn); // BGM 종료
                         break;
                     case 143: // ready 완료
                         if (task.equals(CREATE)) {
@@ -328,44 +323,6 @@ public class ReadyActivity extends AppCompatActivity {
         readyRoomThread.start();
 
         readyCloseThread = new ReadyCloseThread();
-
-        if(!isBind) {
-            bindService(new Intent(this, MusicService.class), sconn, Context.BIND_AUTO_CREATE);
-        }
-    }
-
-    @Override
-    protected void onStart() {
-        if(isBind) {
-            Log.d("yyj", "play");
-            mService.musicPlay();
-        }
-
-        super.onStart();
-    }
-
-    boolean foreground;
-    boolean running;
-
-    @Override
-    public void onPause()
-    {
-        foreground = MusicHelper.isAppInForeground(this);
-        if(!foreground)
-        {
-            mService.musicPause();
-        }
-        super.onPause();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        running = MusicHelper.isAppRunning(this, "com.choegu.indiegame.pipebattle");
-        if(!running)
-        {
-            unbindService(sconn);
-        }
     }
 
     @Override
