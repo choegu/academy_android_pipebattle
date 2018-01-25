@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.media.AudioManager;
@@ -58,13 +59,16 @@ public class MainActivity extends MusicActivity {
     private Socket socket;
     private ObjectInputStream sois;
     private ObjectOutputStream soos;
+    private final String PREF_SETTINGS = "PREF_SETTINGS";
+    private SharedPreferences prefSettings;
+    private SharedPreferences.Editor prefEditorSettings;
 
     // Layout
     private String loginId = "";
     private int selectRating;
     private TextView textMainWelcome, textStartRating;
     private ImageView imgStartTier;
-    private Button btnLoginLogout, btnJoin, btnEnterStart, btnRanking;
+    private Button btnLoginLogout, btnJoin, btnEnterStart, btnRanking, btnMainSettings;
     private Dialog searchNormalDialog, searchRankDialog, normalSearchCompleteDialog, rankSearchCompleteDialog, loadingRankingDialog, loadingStartDialog;
     private RankingAdapter rankingAdapter;
     private List<MemberVO> rankingList;
@@ -94,9 +98,14 @@ public class MainActivity extends MusicActivity {
         btnJoin = findViewById(R.id.btn_join);
         btnEnterStart = findViewById(R.id.btn_enter_start);
         btnRanking = findViewById(R.id.btn_ranking);
+        btnMainSettings = findViewById(R.id.btn_main_settings);
 
         sound = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);// maxStreams, streamType, srcQuality
         clickSoundId = sound.load(this, R.raw.click_button,1);
+
+        prefSettings = getSharedPreferences(PREF_SETTINGS, MODE_PRIVATE);
+        prefEditorSettings = prefSettings.edit();
+        OptionValue.serverIp = prefSettings.getString("server_ip", "192.168.173.1");
 
         Intent receiveIntent = getIntent();
         if (receiveIntent.getStringExtra("loginId")!=null) {
@@ -155,6 +164,14 @@ public class MainActivity extends MusicActivity {
                 sound.play(clickSoundId, 1.0F, 1.0F,  1,  0,  1.0F);
 
                 makeLoadingRankingDialog().show();
+            }
+        });
+
+        // 설정
+        btnMainSettings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                makeSettingsDialog().show();
             }
         });
 
@@ -922,6 +939,31 @@ public class MainActivity extends MusicActivity {
         listViewRanking.setAdapter(rankingAdapter);
 
         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.BLACK));
+
+        return dialog;
+    }
+
+    // settings dialog
+    private Dialog makeSettingsDialog() {
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.dialog_settings);
+        dialog.setTitle("설정");
+
+        final EditText editSettingsIp = dialog.findViewById(R.id.edit_settings_ip);
+        Button btnSettingsOk = dialog.findViewById(R.id.btn_settings_ok);
+
+        editSettingsIp.setText(OptionValue.serverIp);
+
+        btnSettingsOk.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                prefEditorSettings.putString("server_ip", editSettingsIp.getText()+"");
+                prefEditorSettings.commit();
+                OptionValue.serverIp = editSettingsIp.getText()+"";
+                Toast.makeText(MainActivity.this, "IP 설정 : "+editSettingsIp.getText(), Toast.LENGTH_SHORT).show();
+                dialog.cancel();
+            }
+        });
 
         return dialog;
     }
